@@ -196,7 +196,7 @@ class PropertiesPanel extends StatelessWidget {
           ),
         ],
       ),
-      Row(
+      Wrap(
         children: [
           TextButton.icon(
             onPressed: c.bringToFront,
