@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../devices/device_preset.dart';
 
-/// Preview ya kifaa kwa uwiano sahihi: bezel, safe area na cutouts.
+/// A device preview at the right proportions: bezel, safe area and cutouts.
 ///
-/// [size] ni ukubwa wa kimantiki kwa mwelekeo wa sasa; [safeArea] na
-/// [cutouts] tayari zimegeuzwa kwa mwelekeo huo.
+/// [size] is the logical size for the current orientation; [safeArea] and
+/// [cutouts] are already rotated to that orientation.
 class DevicePreview extends StatelessWidget {
   const DevicePreview({
     super.key,
@@ -31,7 +31,7 @@ class DevicePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    // Bezel ni sehemu ndogo ya upande mfupi wa skrini
+    // The bezel is a small fraction of the screen's short side
     final bezelWidth = bezel ? size.shortestSide * 0.035 + 4 : 0.0;
     final outer = Size(
       size.width + bezelWidth * 2,
@@ -116,7 +116,7 @@ class DevicePreview extends StatelessWidget {
   }
 }
 
-/// Mikanda ya safe area (inatumika kwenye preview na kwenye canvas).
+/// Safe area bands (used in the preview and on the canvas).
 class SafeAreaGuides extends StatelessWidget {
   const SafeAreaGuides({super.key, required this.insets, this.scale = 1});
 
@@ -166,7 +166,7 @@ class SafeAreaGuides extends StatelessWidget {
   }
 }
 
-/// Geuza cutout ya wima kuwa mlalo (simu imezungushwa kushoto).
+/// Turn a portrait cutout into landscape (phone rotated left).
 DisplayCutout rotateCutout(DisplayCutout c) => DisplayCutout(
   Rect.fromLTWH(
     c.rect.top,
