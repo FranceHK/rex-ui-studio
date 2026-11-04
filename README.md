@@ -1,5 +1,7 @@
 # Rexa UI Studio
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/francehk235)
+
 Design app screens for phones, tablets, computers and watches, then export
 ready-to-use Flutter code. Built with Flutter (web, Android, macOS).
 
@@ -41,7 +43,9 @@ flutter test
 
 If Rexa UI Studio is useful to you, you can support its development:
 
-**Buy Me a Coffee:** _link coming soon_
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/francehk235)
+
+**Buy Me a Coffee:** https://buymeacoffee.com/francehk235
 
 ## License
 
