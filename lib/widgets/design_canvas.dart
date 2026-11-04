@@ -14,12 +14,12 @@ import 'canvas_painters.dart';
 import 'device_preview.dart' show SafeAreaGuides;
 import 'element_view.dart';
 
-/// Tolerance ya snapping kwa pixel za SKRINI (inabaki sawa kwa zoom yoyote).
+/// Snapping tolerance in SCREEN pixels (the same at any zoom).
 const snapTolerancePx = 6.0;
 
-/// Eneo la kazi: artboards zote za mradi zinaonekana pamoja, zinaweza
-/// kusogezwa, na kila moja ina vipengele vyake. Rulers, guides, gridi na
-/// snapping zote zinatumia [CanvasTransform] moja.
+/// The workspace: all of the project's artboards are shown together, can
+/// be moved, and each has its own elements. Rulers, guides, grid and
+/// snapping all use a single [CanvasTransform].
 class DesignCanvas extends StatefulWidget {
   const DesignCanvas({super.key, required this.controller});
 
@@ -29,7 +29,7 @@ class DesignCanvas extends StatefulWidget {
   State<DesignCanvas> createState() => _DesignCanvasState();
 }
 
-/// Kinachoburutwa sasa hivi.
+/// What is being dragged right now.
 sealed class _Drag {}
 
 class _MoveDrag extends _Drag {
@@ -44,7 +44,7 @@ class _ResizeDrag extends _Drag {
   _ResizeDrag(this.id, this.start, this.pointer, this.targets, this.handle);
   final String id;
 
-  /// Kishiko kinachoburutwa: kona au katikati ya ukingo.
+  /// The handle being dragged: a corner or the middle of an edge.
   final Alignment handle;
   final Rect start;
   final Offset pointer;
@@ -74,7 +74,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
   List<SnapLine> _lines = const [];
   List<Measure> _measures = const [];
 
-  /// Guide inayoburutwa kutoka kwenye ruler (bado haijaongezwa).
+  /// A guide dragged out of a ruler (not added yet).
   ({Axis axis, double position, bool overCanvas})? _newGuide;
   String? _selectedGuide;
   Offset? _lastGuidePointer;
@@ -84,15 +84,15 @@ class _DesignCanvasState extends State<DesignCanvas> {
   String? _hoverId;
   bool _alt = false;
 
-  /// Vidole vilivyo kwenye canvas (pointer → nafasi, kwa pinch).
+  /// Fingers on the canvas (pointer → position, for pinch).
   final _touches = <int, Offset>{};
   bool _pinching = false;
 
-  /// Pointer inayovuta guide mpya kutoka kwenye ruler.
+  /// The pointer pulling a new guide out of a ruler.
   int? _rulerPointer;
 
-  /// Vifaa vinavyoweza kuhariri canvas. Hali ya kalamu: kidole hakihariri
-  /// (kiganja hakiguse vitu kwa bahati mbaya); vidole viwili = zoom/sogeza.
+  /// Devices that may edit the canvas. In pen mode a finger doesn't edit
+  /// (so a palm can't move things by accident); two fingers = zoom/pan.
   Set<PointerDeviceKind> get _editDevices => v.penMode
       ? const {
           PointerDeviceKind.mouse,
@@ -121,14 +121,14 @@ class _DesignCanvasState extends State<DesignCanvas> {
     super.dispose();
   }
 
-  /// Alt (Option) inaonyesha umbali bila kusogeza kitu.
+  /// Alt (Option) shows distances without moving anything.
   bool _onKey(KeyEvent event) {
     final alt = HardwareKeyboard.instance.isAltPressed;
     if (alt != _alt && mounted) setState(() => _alt = alt);
     return false;
   }
 
-  // ---------- Nafasi ----------
+  // ---------- Coordinates ----------
 
   Offset _canvasLocal(Offset global) {
     final box = _stackKey.currentContext!.findRenderObject()! as RenderBox;
@@ -139,12 +139,12 @@ class _DesignCanvasState extends State<DesignCanvas> {
 
   Offset get _origin => c.page.position ?? Offset.zero;
 
-  /// Nafasi ndani ya artboard ya sasa.
+  /// Position inside the current artboard.
   Offset _local(Offset global) => _world(global) - _origin;
 
   bool get _snapOn {
     final keys = HardwareKeyboard.instance;
-    // Ctrl/Cmd wakati wa kuburuta = zima snapping kwa muda
+    // Ctrl/Cmd while dragging = turn snapping off for now
     return v.snap && !keys.isControlPressed && !keys.isMetaPressed;
   }
 
@@ -183,7 +183,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     );
   }
 
-  // ---------- Kusogeza vipengele ----------
+  // ---------- Moving elements ----------
 
   void _focusPage(int index) {
     if (index != c.pageIndex) c.selectPage(index);
@@ -195,7 +195,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     if (HardwareKeyboard.instance.isShiftPressed) {
       c.toggleSelect(e.id);
     } else if (c.selectedIds.contains(e.id) && c.selectedIds.length > 1) {
-      // Bonyeza tena kipengele kilichochaguliwa = kiwe kipengele kikuu
+      // Tapping a selected element again makes it the key object
       c.setKeyObject(e.id);
     } else {
       c.select(e.id);
@@ -292,7 +292,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     });
   }
 
-  // ---------- Marquee (kuchagua vingi kwa kuburuta) ----------
+  // ---------- Marquee (multi-select by dragging) ----------
 
   void _beginMarquee(int pageIndex, Offset global) {
     _focusPage(pageIndex);
@@ -308,7 +308,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     setState(() => d.rect = Rect.fromPoints(d.start, _local(global)));
   }
 
-  // ---------- Zoom na pan ----------
+  // ---------- Zoom and pan ----------
 
   void _zoomAt(double factor, Offset focal) {
     final view = _view!;
@@ -335,7 +335,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     ),
   );
 
-  /// Lete artboard ya sasa katikati ikiwa iko nje ya mwonekano.
+  /// Bring the current artboard to the center if it is out of view.
   void _reveal() {
     final view = _view;
     if (view == null) return;
@@ -402,7 +402,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     _guideDragRecorded = false;
     final last = _lastGuidePointer;
     _lastGuidePointer = null;
-    // Kuirudisha guide kwenye ruler = kuifuta
+    // Dropping a guide back on the ruler deletes it
     if (last != null && v.showRulers && !g.locked && !v.guidesLocked) {
       final s = _canvasLocal(last);
       if ((g.vertical && s.dx < rulerSize) ||
@@ -419,7 +419,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     final value = await showDialog<double>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(g.vertical ? 'Guide wima (X)' : 'Guide mlalo (Y)'),
+        title: Text(g.vertical ? 'Vertical guide (X)' : 'Horizontal guide (Y)'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -433,11 +433,11 @@ class _DesignCanvasState extends State<DesignCanvas> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Ghairi'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, double.tryParse(ctrl.text)),
-            child: const Text('Weka'),
+            child: const Text('Apply'),
           ),
         ],
       ),
@@ -471,8 +471,8 @@ class _DesignCanvasState extends State<DesignCanvas> {
     _artboardRecorded = true;
   }
 
-  /// Badilisha ukubwa wa artboard (k.m. kuirefusha chini kwa skrini
-  /// ndefu inayoscroll kwenye "Run").
+  /// Resize the artboard (e.g. make it taller for a long screen
+  /// that scrolls in "Run").
   void _resizeArtboard(
     Offset global, {
     required bool width,
@@ -491,13 +491,13 @@ class _DesignCanvasState extends State<DesignCanvas> {
     _resizeRecorded = true;
   }
 
-  // ---------- Vidole viwili: zoom na sogeza ----------
+  // ---------- Two fingers: zoom and pan ----------
 
   void _touchDown(PointerDownEvent e) {
     if (e.kind != PointerDeviceKind.touch) return;
     _touches[e.pointer] = e.localPosition;
     if (_touches.length == 2) {
-      // Ishara ya vidole viwili inasimamisha uhariri wowote unaoendelea
+      // A two-finger gesture cancels any edit in progress
       _endDrag();
       _artboardStart = null;
       setState(() {
@@ -550,7 +550,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
           _viewport,
           pad: _fitPad,
         );
-        // Artboard mpya ikiongezwa, ionyeshe
+        // When a new artboard is added, show it
         if (c.pages.length != _pageCount) {
           if (c.pages.length > _pageCount && _pageCount != 0) _reveal();
           _pageCount = c.pages.length;
@@ -562,7 +562,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
             ? null
             : boundsOf(selection.map((e) => e.rect));
 
-        // Alt: kagua umbali bila kusogeza
+        // Alt: inspect distances without moving
         var measures = _measures;
         if (_alt && _drag == null && selBounds != null && v.showDistances) {
           final hovered = page.elements
@@ -613,8 +613,8 @@ class _DesignCanvasState extends State<DesignCanvas> {
             }
           },
           child: GestureDetector(
-            // Kalamu/kipanya kwenye nafasi tupu = sogeza mwonekano. Kidole
-            // kimoja kinasogeza tu nje ya hali ya kalamu.
+            // Pen/mouse on empty space = pan the view. A single finger
+            // only pans outside pen mode.
             supportedDevices: _editDevices,
             onTap: () {
               c.select(null);
@@ -705,7 +705,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     );
   }
 
-  /// "X = 120" kulingana na origin ya rulers.
+  /// "X = 120" relative to the ruler origin.
   String _guideLabel(Axis axis, double position) {
     final o = c.page.rulerOrigin;
     final vertical = axis == Axis.vertical;
@@ -810,7 +810,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Mandhari: bonyeza = ondoa uteuzi; buruta = marquee
+                  // Background: tap = clear selection; drag = marquee
                   Positioned.fill(
                     child: GestureDetector(
                       supportedDevices: _editDevices,
@@ -868,7 +868,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
             bottom: handle / 2,
             child: content,
           ),
-          // Kurefusha chini / kupanua kulia
+          // Make it taller / wider
           _edgeHandle(
             left: handle,
             right: handle,
@@ -935,8 +935,8 @@ class _DesignCanvasState extends State<DesignCanvas> {
   }) {
     final primary = Theme.of(context).colorScheme.primary;
     final handle = 12 / scale;
-    // Nafasi ya ziada kuzunguka kipengele ili vishiko vilivyo nje ya mipaka
-    // yake viweze kubonyezwa (hit test haipiti nje ya mipaka ya mzazi).
+    // Extra room around the element so the handles outside its bounds
+    // can be tapped (hit testing doesn't reach outside the parent).
     final pad = handle;
     final resizable = selected && single && !e.locked;
 
@@ -1048,7 +1048,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     );
   }
 
-  /// Vishiko 8: kona 4 na katikati ya kila ukingo.
+  /// 8 handles: 4 corners and the middle of each edge.
   static const _handles = [
     Alignment.topLeft,
     Alignment.topCenter,
@@ -1067,7 +1067,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     _ => SystemMouseCursors.resizeUpRightDownLeft,
   };
 
-  /// Guides za artboard ya sasa: mstari + eneo la kushika.
+  /// Guides of the current artboard: the line plus a grab area.
   List<Widget> _guides(CanvasTransform view) {
     return [
       for (final g in c.page.guides)
@@ -1105,7 +1105,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     ];
   }
 
-  /// Mstari wa guide unaovuka mwonekano wote (kama Figma/Illustrator).
+  /// A guide line across the whole view (like Figma/Illustrator).
   Widget _guideLine(
     CanvasTransform view,
     Axis axis,
@@ -1173,9 +1173,9 @@ class _DesignCanvasState extends State<DesignCanvas> {
           );
   }
 
-  /// Kuvuta guide kutoka kwenye ruler. Inatumia pointer events moja kwa
-  /// moja (si gesture arena) ili kuburuta kusikatike, na guide iwekwe
-  /// pale kalamu/kidole kinapoachiwa.
+  /// Pulling a guide out of a ruler. Uses raw pointer events (not the
+  /// gesture arena) so the drag is never cancelled, and the guide is placed
+  /// where the pen/finger is lifted.
   Widget _rulerListener(Axis axis, {required Widget child}) => Listener(
     onPointerDown: (e) {
       if (!_editDevices.contains(e.kind) || _pinching) return;
@@ -1245,7 +1245,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
           ),
         ),
       ),
-      // Kona: buruta kuweka origin mpya ya rulers; bonyeza mara 2 kurudisha
+      // Corner: drag to set a new ruler origin; double-tap to reset
       Positioned(
         key: const ValueKey('ruler-corner'),
         left: 0,
@@ -1253,7 +1253,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
         width: rulerSize,
         height: rulerSize,
         child: Tooltip(
-          message: 'Buruta kuweka origin ya rulers · bonyeza mara 2 kurudisha',
+          message: 'Drag to set the ruler origin · double-tap to reset',
           child: GestureDetector(
             supportedDevices: _editDevices,
             onDoubleTap: c.resetRulerOrigin,
@@ -1321,17 +1321,17 @@ class _GuideChip extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
             IconButton(
-              tooltip: 'Andika nafasi kamili',
+              tooltip: 'Enter an exact position',
               icon: const Icon(AppIcons.edit, size: 18),
               onPressed: onEdit,
             ),
             IconButton(
-              tooltip: locked ? 'Fungua guide' : 'Funga guide',
+              tooltip: locked ? 'Unlock guide' : 'Lock guide',
               icon: Icon(locked ? AppIcons.lock : AppIcons.unlock, size: 18),
               onPressed: onLock,
             ),
             IconButton(
-              tooltip: 'Futa guide',
+              tooltip: 'Delete guide',
               icon: const Icon(AppIcons.trash, size: 18),
               onPressed: onDelete,
             ),
@@ -1361,7 +1361,7 @@ class _ZoomBar extends StatelessWidget {
   final VoidCallback onFitAll;
   final ValueChanged<double> onPreset;
 
-  /// Mwonekano umefungwa (hakuna pan/zoom kwa vidole au scroll).
+  /// The view is locked (no pan/zoom with fingers or scroll).
   final bool locked;
   final VoidCallback onToggleLock;
 
@@ -1378,12 +1378,12 @@ class _ZoomBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              tooltip: 'Punguza (Cmd + scroll)',
+              tooltip: 'Zoom out (Cmd + scroll)',
               icon: const Icon(AppIcons.zoomOut, size: 20),
               onPressed: onZoomOut,
             ),
             PopupMenuButton<double>(
-              tooltip: 'Kiwango cha zoom',
+              tooltip: 'Zoom level',
               onSelected: onPreset,
               itemBuilder: (_) => [
                 for (final z in [0.25, 0.5, 1.0, 2.0, 4.0])
@@ -1399,24 +1399,24 @@ class _ZoomBar extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Kuza',
+              tooltip: 'Zoom in',
               icon: const Icon(AppIcons.zoomIn, size: 20),
               onPressed: onZoomIn,
             ),
             IconButton(
-              tooltip: 'Tosha skrini hii',
+              tooltip: 'Fit this screen',
               icon: const Icon(AppIcons.fit, size: 20),
               onPressed: onFit,
             ),
             IconButton(
-              tooltip: 'Onyesha skrini zote',
+              tooltip: 'Show all screens',
               icon: const Icon(AppIcons.screens, size: 20),
               onPressed: onFitAll,
             ),
             IconButton(
               tooltip: locked
-                  ? 'Fungua mwonekano (ruhusu kusogeza/zoom)'
-                  : 'Funga mwonekano (usisogee ukihariri)',
+                  ? 'Unlock view (allow pan/zoom)'
+                  : 'Lock view (keep still while editing)',
               isSelected: locked,
               style: IconButton.styleFrom(
                 foregroundColor: locked ? scheme.onPrimary : null,

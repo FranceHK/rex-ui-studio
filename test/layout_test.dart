@@ -541,7 +541,7 @@ void main() {
     );
 
     // Funga mwonekano: pinch haibadilishi zoom
-    await tester.tap(find.byTooltip('Funga mwonekano (usisogee ukihariri)'));
+    await tester.tap(find.byTooltip('Lock view (keep still while editing)'));
     await tester.pumpAndSettle();
     await pinch(80);
     expect(zoom(), z1);
