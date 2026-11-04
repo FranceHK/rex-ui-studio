@@ -30,9 +30,7 @@ String exportSwiftUI(DesignPage page) {
       ..writeln(
         '                .frame(width: ${fmt(r.width)}, height: ${fmt(r.height)})',
       )
-      ..writeln(
-        '                .offset(x: ${fmt(r.left)}, y: ${fmt(r.top)})',
-      );
+      ..writeln('                .offset(x: ${fmt(r.left)}, y: ${fmt(r.top)})');
   }
   b
     ..writeln('        }')
@@ -113,7 +111,9 @@ String _view(UiElement e) {
           'Text("$text")$font$fg; Spacer() }'
           '.padding(.horizontal, 16).background(${_color(e.color)})',
     ElementType.navBar =>
-      'HStack { ${[for (final (i, n) in const ['house', 'magnifyingglass', 'heart', 'person'].indexed) 'Spacer(); Image(systemName: "$n").foregroundStyle(${i == 0 ? _color(e.textColor) : _color(const Color(0xFF98A2B3))})'].join('; ')}; Spacer() }'
+      'HStack { ${[
+            for (final (i, n) in const ['house', 'magnifyingglass', 'heart', 'person'].indexed) 'Spacer(); Image(systemName: "$n").foregroundStyle(${i == 0 ? _color(e.textColor) : _color(const Color(0xFF98A2B3))})',
+          ].join('; ')}; Spacer() }'
           '.background(${_color(e.color)})',
     ElementType.iconItem =>
       'Image(systemName: "${sfSymbol(e.text)}").resizable().scaledToFit()'
@@ -150,7 +150,5 @@ String _color(Color c) {
       '${a < 1 ? ', opacity: ${f(a)}' : ''})';
 }
 
-String _s(String v) => v
-    .replaceAll(r'\', r'\\')
-    .replaceAll('"', r'\"')
-    .replaceAll('\n', r'\n');
+String _s(String v) =>
+    v.replaceAll(r'\', r'\\').replaceAll('"', r'\"').replaceAll('\n', r'\n');

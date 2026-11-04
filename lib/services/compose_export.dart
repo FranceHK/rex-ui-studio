@@ -100,7 +100,9 @@ String _composable(UiElement e, String m) {
       'Row($m.background(${_color(e.color)}), '
           'horizontalArrangement = Arrangement.SpaceAround, '
           'verticalAlignment = Alignment.CenterVertically) { '
-          '${[for (final (i, n) in const ['Home', 'Search', 'Favorite', 'Person'].indexed) 'Icon(Icons.Default.$n, contentDescription = null, tint = ${i == 0 ? _color(e.textColor) : _color(const Color(0xFF98A2B3))})'].join('; ')} }',
+          '${[
+            for (final (i, n) in const ['Home', 'Search', 'Favorite', 'Person'].indexed) 'Icon(Icons.Default.$n, contentDescription = null, tint = ${i == 0 ? _color(e.textColor) : _color(const Color(0xFF98A2B3))})',
+          ].join('; ')} }',
     ElementType.iconItem =>
       'Icon(Icons.Default.${composeIcon(e.text)}, contentDescription = '
           '"${_s(e.text)}", tint = ${_color(e.color)}, modifier = $m)',
@@ -126,8 +128,7 @@ String _shape(UiElement e) {
     return 'GenericShape { size, _ -> $path; close() }';
   }
   return switch (e.shape) {
-    ElementShape.ellipse =>
-      'GenericShape { size, _ -> addOval(Rect(0f, 0f, size.width, size.height)) }',
+    ElementShape.ellipse => 'GenericShape { size, _ -> addOval(Rect(0f, 0f, size.width, size.height)) }',
     _ => 'RoundedCornerShape(${fmt(e.radius)}.dp)',
   };
 }
