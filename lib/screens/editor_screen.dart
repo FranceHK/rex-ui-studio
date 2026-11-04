@@ -38,6 +38,21 @@ class _EditorScreenState extends State<EditorScreen> {
   late String _name = widget.project.name;
 
   _SaveState _saveState = _SaveState.loading;
+
+  /// Paneli za kushoto na kulia zimefunguliwa (zikikunjwa, canvas
+  /// inapata nafasi zaidi).
+  bool _leftOpen = true;
+  bool _rightOpen = true;
+
+  void _toggleLeft() => setState(() => _leftOpen = !_leftOpen);
+  void _toggleRight() => setState(() => _rightOpen = !_rightOpen);
+
+  /// Uwanja mzima: kunja paneli zote mbili, au zifungue tena.
+  void _toggleFocusCanvas() {
+    final open = !(_leftOpen || _rightOpen);
+    setState(() => _leftOpen = _rightOpen = open);
+  }
+
   Timer? _saveTimer;
 
   ProjectStorage get _storage => widget.storage;
@@ -91,6 +106,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Map<ShortcutActivator, VoidCallback> get _shortcuts => {
+    const SingleActivator(LogicalKeyboardKey.backslash, meta: true):
+        _toggleFocusCanvas,
+    const SingleActivator(LogicalKeyboardKey.backslash, control: true):
+        _toggleFocusCanvas,
     const SingleActivator(LogicalKeyboardKey.delete): c.deleteSelected,
     const SingleActivator(LogicalKeyboardKey.backspace): c.deleteSelected,
     const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): c.undo,
@@ -338,6 +357,7 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, _) {
         final left = SidePanel(controller: c);
         final right = PropertiesPanel(controller: c);
+        final focused = showLeft && !_leftOpen && showRight && !_rightOpen;
 
         return Focus(
           onKeyEvent: _onKey,
@@ -457,6 +477,15 @@ class _EditorScreenState extends State<EditorScreen> {
                     icon: const Icon(AppIcons.code, size: 18),
                     label: const Text('Toa code'),
                   ),
+                  if (showLeft && showRight)
+                    IconButton(
+                      tooltip: focused
+                          ? 'Rudisha paneli (Cmd/Ctrl + \\)'
+                          : 'Uwanja mzima — kunja paneli (Cmd/Ctrl + \\)',
+                      isSelected: focused,
+                      onPressed: _toggleFocusCanvas,
+                      icon: const Icon(AppIcons.focusCanvas),
+                    ),
                   if (!showRight)
                     Builder(
                       builder: (context) => IconButton(
@@ -475,26 +504,92 @@ class _EditorScreenState extends State<EditorScreen> {
               endDrawer: showRight
                   ? null
                   : Drawer(child: SafeArea(child: right)),
-              body: Row(
-                children: [
-                  if (showLeft) ...[
-                    SizedBox(width: 380, child: left),
-                    const VerticalDivider(width: 1),
-                  ],
-                  Expanded(
-                    child: Listener(
-                      onPointerDown: (_) => _focus.requestFocus(),
-                      // Kalamu ikigusa nje ya kisanduku, TextField inaondoa
-                      // focus baada ya pointer down — irudishe kwa editor.
-                      onPointerUp: (_) => _focus.requestFocus(),
-                      child: DesignCanvas(controller: c),
+              backgroundColor: scheme.surfaceContainer,
+              body: Padding(
+                padding: const EdgeInsets.all(_gap),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (showLeft) ...[
+                      _Panel(
+                        collapsible: true,
+                        width: _leftOpen ? 380 : null,
+                        child: SidePanel(
+                          controller: c,
+                          expanded: _leftOpen,
+                          onToggle: _toggleLeft,
+                        ),
+                      ),
+                      const SizedBox(width: _gap),
+                    ],
+                    Expanded(
+                      child: _Panel(
+                        child: Listener(
+                          onPointerDown: (_) => _focus.requestFocus(),
+                          // Kalamu ikigusa nje ya kisanduku, TextField
+                          // inaondoa focus baada ya pointer down — irudishe.
+                          onPointerUp: (_) => _focus.requestFocus(),
+                          child: DesignCanvas(controller: c),
+                        ),
+                      ),
                     ),
-                  ),
-                  if (showRight) ...[
-                    const VerticalDivider(width: 1),
-                    SizedBox(width: 300, child: right),
+                    if (showRight) ...[
+                      const SizedBox(width: _gap),
+                      _Panel(
+                        collapsible: true,
+                        width: _rightOpen ? 300 : null,
+                        child: _rightOpen
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      6,
+                                      4,
+                                      0,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            'Sifa',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: scheme.outline,
+                                            ),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          tooltip: 'Kunja paneli',
+                                          icon: const Icon(AppIcons.panelRight),
+                                          onPressed: _toggleRight,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(child: right),
+                                ],
+                              )
+                            : Column(
+                                children: [
+                                  const SizedBox(height: 6),
+                                  IconButton(
+                                    tooltip: 'Funua paneli ya sifa',
+                                    icon: const Icon(AppIcons.panelRight),
+                                    onPressed: _toggleRight,
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Sifa',
+                                    icon: const Icon(AppIcons.properties),
+                                    onPressed: _toggleRight,
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -525,6 +620,52 @@ class _SaveIndicator extends StatelessWidget {
         const SizedBox(width: 4),
         Text(label, style: TextStyle(fontSize: 12, color: color)),
       ],
+    );
+  }
+}
+
+/// Nafasi kati ya paneli na kingo za dirisha.
+const _gap = 8.0;
+
+/// Paneli "inayoelea": kona za mviringo, mpaka mwembamba na kivuli kidogo.
+/// [collapsible] = true: upana unafuata [width] (au upana wa asili wa
+/// maudhui ikiwa null, k.m. paneli iliyokunjwa) kwa animation.
+class _Panel extends StatelessWidget {
+  const _Panel({required this.child, this.width, this.collapsible = false});
+
+  final Widget child;
+  final double? width;
+  final bool collapsible;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final panel = DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Material(type: MaterialType.transparency, child: child),
+      ),
+    );
+    if (!collapsible) return panel;
+    // AnimatedSize inapanga maudhui kwa upana wa mwisho na kuyakata wakati
+    // wa animation, kwa hiyo hayabanwi wala kuzidi mipaka.
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.centerLeft,
+      child: SizedBox(width: width, child: panel),
     );
   }
 }
