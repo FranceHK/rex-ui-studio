@@ -17,6 +17,9 @@ import 'element_view.dart';
 /// Snapping tolerance in SCREEN pixels (the same at any zoom).
 const snapTolerancePx = 6.0;
 
+/// How close (screen px) a hovering pen must be to show an element's handles.
+const penReachPx = 24.0;
+
 /// The workspace: all of the project's artboards are shown together, can
 /// be moved, and each has its own elements. Rulers, guides, grid and
 /// snapping all use a single [CanvasTransform].
@@ -84,6 +87,10 @@ class _DesignCanvasState extends State<DesignCanvas> {
   String? _hoverId;
   bool _alt = false;
 
+  /// Element the pen is hovering on or near: its resize handles show
+  /// before the pen touches the screen.
+  String? _nearId;
+
   /// Fingers on the canvas (pointer → position, for pinch).
   final _touches = <int, Offset>{};
   bool _pinching = false;
@@ -141,6 +148,22 @@ class _DesignCanvasState extends State<DesignCanvas> {
 
   /// Position inside the current artboard.
   Offset _local(Offset global) => _world(global) - _origin;
+
+  /// Show resize handles on the element under or near a hovering pen.
+  void _penHover(PointerHoverEvent event, CanvasTransform view) {
+    String? near;
+    if (_drag == null &&
+        (event.kind == PointerDeviceKind.stylus ||
+            event.kind == PointerDeviceKind.invertedStylus)) {
+      final p = view.toWorld(event.localPosition) - _origin;
+      final reach = penReachPx / view.scale;
+      near = c.page.elements.reversed
+          .where((e) => !e.locked && e.rect.inflate(reach).contains(p))
+          .firstOrNull
+          ?.id;
+    }
+    if (near != _nearId) setState(() => _nearId = near);
+  }
 
   bool get _snapOn {
     final keys = HardwareKeyboard.instance;
@@ -253,6 +276,8 @@ class _DesignCanvasState extends State<DesignCanvas> {
   }
 
   void _beginResize(UiElement e, Alignment handle, Offset global) {
+    // A hover handle can belong to an element that isn't selected yet
+    if (!c.selectedIds.contains(e.id)) c.select(e.id);
     _drag = _ResizeDrag(e.id, e.rect, _local(global), _targets({e.id}), handle);
   }
 
@@ -577,7 +602,10 @@ class _DesignCanvasState extends State<DesignCanvas> {
         }
 
         return Listener(
-          onPointerHover: (e) => _cursor.value = view.toWorld(e.localPosition),
+          onPointerHover: (e) {
+            _cursor.value = view.toWorld(e.localPosition);
+            _penHover(e, view);
+          },
           onPointerMove: (e) {
             _cursor.value = _view!.toWorld(e.localPosition);
             _touchMove(e);
@@ -934,11 +962,18 @@ class _DesignCanvasState extends State<DesignCanvas> {
     required double scale,
   }) {
     final primary = Theme.of(context).colorScheme.primary;
-    final handle = 12 / scale;
+    // Bigger grips for a pen than for a mouse
+    final handle = (v.penMode ? 20 : 12) / scale;
     // Extra room around the element so the handles outside its bounds
     // can be tapped (hit testing doesn't reach outside the parent).
     final pad = handle;
-    final resizable = selected && single && !e.locked;
+    final hovered =
+        _nearId == e.id &&
+        pageIndex == c.pageIndex &&
+        !selected &&
+        !e.locked &&
+        c.selectedIds.length <= 1;
+    final resizable = (selected && single && !e.locked) || hovered;
 
     return Positioned.fromRect(
       rect: e.rect.inflate(pad),
@@ -1003,6 +1038,19 @@ class _DesignCanvasState extends State<DesignCanvas> {
                       ),
                     ),
                 ],
+                if (hovered)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: primary.withValues(alpha: 0.6),
+                            width: 1 / scale,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (_alt && _hoverId == e.id && !selected)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -1026,19 +1074,21 @@ class _DesignCanvasState extends State<DesignCanvas> {
                 top: pad + (h.y + 1) / 2 * e.rect.height - handle / 2,
                 width: handle,
                 height: handle,
-                child: GestureDetector(
-                  supportedDevices: _editDevices,
-                  onPanStart: (d) => _beginResize(e, h, d.globalPosition),
-                  onPanUpdate: (d) => _updateResize(d.globalPosition),
-                  onPanEnd: (_) => _endDrag(),
-                  child: MouseRegion(
-                    cursor: _resizeCursor(h),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(2 / scale),
-                        border: Border.all(color: primary, width: 1.5 / scale),
-                      ),
+                // Grips react after a few px (the default pen slop is 36 px)
+                // and measure from where the pen touched down.
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    gestureSettings: const DeviceGestureSettings(touchSlop: 2),
+                  ),
+                  child: GestureDetector(
+                    supportedDevices: _editDevices,
+                    dragStartBehavior: DragStartBehavior.down,
+                    onPanStart: (d) => _beginResize(e, h, d.globalPosition),
+                    onPanUpdate: (d) => _updateResize(d.globalPosition),
+                    onPanEnd: (_) => _endDrag(),
+                    child: MouseRegion(
+                      cursor: _resizeCursor(h),
+                      child: _Grip(handle: h, color: primary, scale: scale),
                     ),
                   ),
                 ),
@@ -1049,6 +1099,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
   }
 
   /// 8 handles: 4 corners and the middle of each edge.
+  /// (Edge handles change only the width or the height.)
   static const _handles = [
     Alignment.topLeft,
     Alignment.topCenter,
@@ -1428,6 +1479,35 @@ class _ZoomBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The visible part of a resize handle: a square on corners, and a bar
+/// along the edge on edge midpoints (they change only width or height).
+class _Grip extends StatelessWidget {
+  const _Grip({required this.handle, required this.color, required this.scale});
+
+  final Alignment handle;
+  final Color color;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final corner = handle.x != 0 && handle.y != 0;
+    final box = DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular((corner ? 2 : 4) / scale),
+        border: Border.all(color: color, width: 1.5 / scale),
+      ),
+    );
+    if (corner) return Padding(padding: EdgeInsets.all(2 / scale), child: box);
+    // Left/right edges: tall bar; top/bottom edges: wide bar
+    return FractionallySizedBox(
+      widthFactor: handle.x == 0 ? 1 : 0.45,
+      heightFactor: handle.x == 0 ? 0.45 : 1,
+      child: box,
     );
   }
 }
