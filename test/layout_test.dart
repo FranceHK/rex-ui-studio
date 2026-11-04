@@ -12,6 +12,7 @@ import 'package:rexa_ui_studio/canvas/layout.dart';
 import 'package:rexa_ui_studio/canvas/snapping.dart';
 import 'package:rexa_ui_studio/main.dart';
 import 'package:rexa_ui_studio/models/device_frame.dart';
+import 'package:rexa_ui_studio/models/reference_image.dart';
 import 'package:rexa_ui_studio/models/ui_element.dart';
 import 'package:rexa_ui_studio/screens/export_image_dialog.dart';
 import 'package:rexa_ui_studio/screens/run_screen.dart';
@@ -547,6 +548,37 @@ void main() {
     await tester.pumpAndSettle();
     await pinch(80);
     expect(zoom(), z1);
+  });
+
+  testWidgets('a reference image is drawn on its artboard', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final c = EditorController()..addElement(ElementType.button);
+    c.setReference(
+      ReferenceImage(
+        // 1×1 transparent PNG
+        bytes: base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        ),
+        pixelSize: const Size(1, 2),
+      ),
+    );
+    final info = await ProjectStorage().create('Reference', c.toJson());
+    await tester.pumpWidget(const RexaStudioApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(info.name));
+    await tester.pumpAndSettle();
+
+    final image = find.byKey(const ValueKey('reference-image'));
+    expect(image, findsOneWidget);
+    // Beneath the elements by default
+    final order = tester.allWidgets.toList();
+    expect(
+      order.indexOf(tester.widget(image)),
+      lessThan(order.indexWhere((w) => w is ElementView)),
+    );
   });
 
   testWidgets('the grid is painted beneath the elements', (tester) async {
