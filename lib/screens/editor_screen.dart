@@ -7,11 +7,11 @@ import 'package:flutter/services.dart';
 import '../canvas/alignment.dart';
 import '../canvas/layout.dart';
 import '../icons/app_icons.dart';
-import '../services/flutter_export.dart';
 import '../services/project_storage.dart';
 import '../state/editor_controller.dart';
 import '../widgets/canvas_settings.dart';
 import '../widgets/design_canvas.dart';
+import 'code_dialog.dart';
 import 'export_image_dialog.dart';
 import 'run_screen.dart';
 import '../widgets/properties_panel.dart';
@@ -306,52 +306,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _showCode() {
-    final code = exportFlutter(c.page);
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Flutter code — ${c.page.name}'),
-        content: SizedBox(
-          width: 720,
-          height: 480,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: SingleChildScrollView(
-              child: SelectableText(
-                code,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12.5,
-                  color: Color(0xFFE2E8F0),
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Funga'),
-          ),
-          FilledButton.icon(
-            icon: const Icon(AppIcons.copy),
-            label: const Text('Nakili code'),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: code));
-              Navigator.pop(context);
-              _toast('Code imenakiliwa ✓');
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  void _showCode() => showCodeDialog(context, c.page);
 
   @override
   Widget build(BuildContext context) {
