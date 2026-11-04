@@ -5,14 +5,14 @@ import 'package:flutter/painting.dart' show Axis;
 
 import 'geometry.dart';
 
-/// Kazi 7 za kupanga (ya 8 ni "align to key object" — ni lengo, si
-/// mwelekeo; tazama [AlignTo] kwenye layout.dart).
+/// The 7 align operations (the 8th, "align to key object", is a target,
+/// not a direction; see [AlignTo] in layout.dart).
 enum AlignOp { left, hCenter, right, top, vCenter, bottom, centerBoth }
 
 enum DistributeOp { left, hCenter, right, top, vCenter, bottom }
 
-/// Panga [rects] dhidi ya [target]. Ukubwa wa kila kipengele haubadiliki;
-/// [keyId] (kipengele kikuu) hakisogei.
+/// Align [rects] to [target]. Each element keeps its size;
+/// [keyId] (the key object) doesn't move.
 Map<String, Rect> alignRects(
   Map<String, Rect> rects,
   AlignOp op,
@@ -55,8 +55,8 @@ bool _horizontal(DistributeOp op) =>
     op == DistributeOp.hCenter ||
     op == DistributeOp.right;
 
-/// Sambaza kingo/vituo kwa umbali sawa. Vya kwanza na vya mwisho
-/// havisogei. Inahitaji vipengele ≥ 3.
+/// Distribute edges/centers evenly. The first and last ones
+/// don't move. Needs ≥ 3 elements.
 Map<String, Rect> distributeRects(Map<String, Rect> rects, DistributeOp op) {
   if (rects.length < 3) return Map.of(rects);
   final sorted = rects.entries.toList()
@@ -75,7 +75,7 @@ Map<String, Rect> distributeRects(Map<String, Rect> rects, DistributeOp op) {
   };
 }
 
-/// Nafasi sawa kati ya vipengele (vya pembeni havisogei). ≥ 3.
+/// Equal spacing between elements (the outer ones don't move). ≥ 3.
 Map<String, Rect> distributeSpacing(Map<String, Rect> rects, Axis axis) {
   if (rects.length < 3) return Map.of(rects);
   final h = axis == Axis.horizontal;
@@ -96,7 +96,7 @@ Map<String, Rect> distributeSpacing(Map<String, Rect> rects, Axis axis) {
   return _stack(sorted, axis, gap);
 }
 
-/// Weka vipengele mfululizo kwa nafasi [gap] (kuanzia cha kwanza). ≥ 2.
+/// Place elements in a row with [gap] spacing (from the first). ≥ 2.
 Map<String, Rect> applyGap(Map<String, Rect> rects, Axis axis, double gap) {
   if (rects.length < 2) return Map.of(rects);
   final h = axis == Axis.horizontal;
@@ -127,9 +127,9 @@ Map<String, Rect> _stack(
   return out;
 }
 
-/// Tidy up: gawa vipengele kwenye mistari (rows) kulingana na nafasi
-/// zao, kisha panga kila mstari kushoto→kulia kwa [hGap] na mistari juu→
-/// chini kwa [vGap], kuanzia kona ya juu-kushoto ya uteuzi.
+/// Tidy up: split the elements into rows by position, then lay each
+/// row out left→right with [hGap] and the rows top→bottom with
+/// [vGap], starting at the selection's top-left corner.
 Map<String, Rect> tidyUp(
   Map<String, Rect> rects, {
   required double hGap,
@@ -140,8 +140,8 @@ Map<String, Rect> tidyUp(
   final byTop = rects.entries.toList()
     ..sort((a, b) => a.value.center.dy.compareTo(b.value.center.dy));
 
-  // Mistari: kipengele kinaingia mstari ikiwa kituo chake kiko ndani ya
-  // urefu wa mstari huo.
+  // Rows: an element joins a row if its center is within
+  // that row's height.
   final rows = <List<MapEntry<String, Rect>>>[];
   for (final e in byTop) {
     final row = rows.lastOrNull;
@@ -176,8 +176,8 @@ Map<String, Rect> tidyUp(
   return out;
 }
 
-/// Smart arrange: kama tidy up, lakini nafasi zinachukuliwa kutoka kwenye
-/// nafasi za sasa (wastani, si chini ya 0).
+/// Smart arrange: like tidy up, but the gaps are taken from the
+/// current spacing (the average, never below 0).
 Map<String, Rect> smartArrange(Map<String, Rect> rects) {
   double avgGap(Axis axis) {
     final h = axis == Axis.horizontal;
