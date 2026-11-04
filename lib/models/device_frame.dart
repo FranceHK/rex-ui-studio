@@ -8,26 +8,26 @@ enum DeviceBrand {
   apple('Apple'),
   samsung('Samsung'),
   google('Google'),
-  generic('Nyingine');
+  generic('Other');
 
   const DeviceBrand(this.label);
   final String label;
 }
 
 enum DeviceKind {
-  phone('Simu', AppIcons.phone),
-  foldable('Zinazokunjika', AppIcons.foldable),
-  tablet('Tablet', AppIcons.tablet),
-  computer('Kompyuta', AppIcons.computer),
-  watch('Saa janja', AppIcons.watch);
+  phone('Phones', AppIcons.phone),
+  foldable('Foldables', AppIcons.foldable),
+  tablet('Tablets', AppIcons.tablet),
+  computer('Computers', AppIcons.computer),
+  watch('Watches', AppIcons.watch);
 
   const DeviceKind(this.label, this.icon);
   final String label;
   final IconData icon;
 }
 
-/// Kifaa ambacho skrini inabuniwa kwa ajili yake. [size] ni ukubwa wa
-/// kimantiki (points kwa Apple, dp kwa Android) ukiwa wima.
+/// The device a screen is designed for. [size] is the logical size
+/// (points on Apple, dp on Android) in portrait.
 class DeviceFrame {
   const DeviceFrame(
     this.id,
@@ -48,19 +48,19 @@ class DeviceFrame {
   final Size size;
   final double? radius;
 
-  /// Saa zenye skrini ya duara (Galaxy Watch, Pixel Watch).
+  /// Watches with a round screen (Galaxy Watch, Pixel Watch).
   final bool round;
 
-  /// Rekodi kamili ya katalogi kwa simu (null kwa tablet, kompyuta, saa).
+  /// The full catalog record for phones (null for tablets, computers, watches).
   final DevicePreset? preset;
   final DeviceDisplay? display;
 
   IconData get icon => kind.icon;
 
-  /// Resolution halisi (px) ikiwa wima, kama inajulikana.
+  /// Physical resolution (px) in portrait, if known.
   Size? get physical => display?.physical;
 
-  /// Mviringo wa kona za skrini.
+  /// Corner radius of the screen.
   double cornerRadius(Size actual) => round
       ? actual.shortestSide / 2
       : radius ??
@@ -89,7 +89,7 @@ DeviceBrand brandOf(Manufacturer m) => switch (m) {
   Manufacturer.google => DeviceBrand.google,
 };
 
-/// DeviceFrame ya skrini moja ya simu kwenye katalogi.
+/// DeviceFrame for one phone screen in the catalog.
 DeviceFrame frameFor(DevicePreset preset, DeviceDisplay display) => DeviceFrame(
   preset.frameId(display.role),
   brandOf(preset.manufacturer),
@@ -103,13 +103,13 @@ DeviceFrame frameFor(DevicePreset preset, DeviceDisplay display) => DeviceFrame(
   display: display,
 );
 
-/// Simu zote za katalogi (kila skrini ya kifaa kinachokunjika ni frame yake).
+/// All catalog phones (each screen of a foldable is its own frame).
 final List<DeviceFrame> phoneFrames = [
   for (final p in phoneCatalog)
     for (final d in p.displays) frameFor(p, d),
 ];
 
-/// Skrini nyingine ya kifaa kinachokunjika (imekunjwa ↔ imefunguliwa).
+/// The other screen of a foldable (folded ↔ unfolded).
 DeviceFrame? foldPartner(DeviceFrame device) {
   final preset = device.preset;
   if (preset == null || !preset.foldable) return null;
@@ -264,7 +264,7 @@ const _otherDevices = <DeviceFrame>[
     'Galaxy Tab A9+',
     Size(800, 1280),
   ),
-  // ---------- Samsung: Galaxy Watch (duara) ----------
+  // ---------- Samsung: Galaxy Watch (round) ----------
   DeviceFrame(
     'galaxy-watch-ultra',
     _samsung,
@@ -314,7 +314,7 @@ const _otherDevices = <DeviceFrame>[
     'Pixel Tablet',
     Size(800, 1280),
   ),
-  // ---------- Google: Pixel Watch (duara) ----------
+  // ---------- Google: Pixel Watch (round) ----------
   DeviceFrame(
     'pixel-watch-45',
     _google,
@@ -340,7 +340,7 @@ const _otherDevices = <DeviceFrame>[
     round: true,
   ),
 
-  // ---------- Nyingine ----------
+  // ---------- Other ----------
   DeviceFrame(
     'desktop-fhd',
     _generic,
@@ -350,19 +350,19 @@ const _otherDevices = <DeviceFrame>[
   ),
   DeviceFrame('desktop', _generic, _pc, 'Desktop', Size(1440, 900)),
   DeviceFrame('laptop-hd', _generic, _pc, 'Laptop HD', Size(1366, 768)),
-  DeviceFrame(customDeviceId, _generic, _pc, 'Ukubwa maalum', Size(375, 812)),
+  DeviceFrame(customDeviceId, _generic, _pc, 'Custom size', Size(375, 812)),
 ];
 
-/// Orodha ya vifaa vyote: simu kutoka katalogi, kisha tablet, kompyuta na
-/// saa. Ukubwa wa Apple ni points rasmi; wa Android ni dp.
+/// All devices: phones from the catalog, then tablets, computers and
+/// watches. Apple sizes are official points; Android sizes are dp.
 final List<DeviceFrame> devices = [...phoneFrames, ..._otherDevices];
 
 final Map<String, DeviceFrame> _byId = {for (final d in devices) d.id: d};
 
 DeviceFrame get defaultDevice => _byId['iphone-17-pro']!;
 
-/// Vifaa vya toleo la zamani la app: id ya zamani → (id mpya, ukubwa wa
-/// zamani). Ukubwa wa zamani unahifadhiwa ili muundo usisogee.
+/// Devices from an older app version: old id → (new id, old size).
+/// The old size is kept so the design doesn't move.
 const legacyDevices = <String, (String, Size)>{
   'iphone-se': ('iphone-se-3', Size(375, 667)),
   'iphone-15': ('iphone-15', Size(393, 852)),
@@ -388,7 +388,7 @@ const legacyDevices = <String, (String, Size)>{
   'pixel-7': ('pixel-7', Size(412, 915)),
   'pixel-fold-cover': ('pixel-9-pro-fold-outer', Size(412, 869)),
   'pixel-fold-main': ('pixel-9-pro-fold-inner', Size(851, 882)),
-  // Majina ya zamani yaliyounganisha modeli mbili
+  // Old names that merged two models
   'iPhone 15 / 15 Plus': ('iphone-15', Size(393, 852)),
   'iPhone 14 / 13': ('iphone-14', Size(390, 844)),
   'iPhone SE': ('iphone-se-3', Size(375, 667)),
@@ -398,7 +398,7 @@ const legacyDevices = <String, (String, Size)>{
   'Pixel 10 Pro XL / 9 Pro XL': ('pixel-10-pro-xl', Size(412, 915)),
 };
 
-/// Tafuta kifaa kwa id (au kwa jina, kwa miradi ya toleo la zamani).
+/// Find a device by id (or by name, for projects from older versions).
 DeviceFrame deviceById(String? id) {
   if (id == null) return defaultDevice;
   if (_byId[id] case final d?) return d;
