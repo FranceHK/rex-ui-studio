@@ -3,16 +3,16 @@ import 'dart:ui';
 
 import 'package:flutter/painting.dart' show Alignment;
 
-/// Ubadilishaji mmoja wa nafasi unaotumiwa na canvas, rulers, guides,
-/// snapping na alignment.
+/// The single coordinate transform used by the canvas, rulers, guides,
+/// snapping and alignment.
 ///
-/// Nafasi tatu:
-///  * screen  — pixel za widget ya canvas (baada ya zoom na pan)
-///  * world   — nafasi ya canvas nzima; kila artboard ina `position` hapa
-///  * local   — nafasi ndani ya artboard (vipengele vinahifadhiwa hivi)
+/// Three spaces:
+///  * screen  — pixels of the canvas widget (after zoom and pan)
+///  * world   — the whole canvas; each artboard has its `position` here
+///  * local   — inside an artboard (elements are stored this way)
 ///
-/// `screen = world × scale + offset`. Vipengele havina rotation wala
-/// groups, kwa hiyo bounds zake ni mstatili wa kawaida (axis-aligned).
+/// `screen = world × scale + offset`. Elements have no rotation or
+/// groups, so their bounds are plain axis-aligned rectangles.
 class CanvasTransform {
   const CanvasTransform(this.scale, this.offset);
 
@@ -25,11 +25,11 @@ class CanvasTransform {
   Rect rectToScreen(Rect world) =>
       Rect.fromPoints(toScreen(world.topLeft), toScreen(world.bottomRight));
 
-  /// Badilisha umbali wa pixel za skrini kuwa world (k.m. tolerance ya
-  /// snapping ya pixel 6 inabaki 6 kwa zoom yoyote).
+  /// Convert a distance in screen pixels to world (e.g. a 6 px snapping
+  /// tolerance stays 6 px at any zoom).
   double screenToWorld(double pixels) => pixels / scale;
 
-  /// Zoom kuzunguka [focal] (screen) ili nukta iliyo chini yake isisogee.
+  /// Zoom around [focal] (screen) so the point under it stays put.
   CanvasTransform zoomAt(double nextScale, Offset focal) {
     final world = toWorld(focal);
     return CanvasTransform(nextScale, focal - world * nextScale);
@@ -37,7 +37,7 @@ class CanvasTransform {
 
   CanvasTransform panBy(Offset delta) => CanvasTransform(scale, offset + delta);
 
-  /// Mwonekano unaotosha [world] ndani ya [viewport] (na nafasi [pad]).
+  /// The view that fits [world] inside [viewport] (with [pad] padding).
   static CanvasTransform fit(
     Rect world,
     Size viewport, {
@@ -53,7 +53,7 @@ class CanvasTransform {
   }
 }
 
-/// Hatua "nzuri" za rulers.
+/// "Nice" ruler steps.
 const _niceSteps = [
   1.0,
   2.0,
@@ -73,9 +73,9 @@ const _niceSteps = [
   10000.0,
 ];
 
-/// Nafasi kati ya namba kwenye ruler kwa [scale] fulani: hatua ndogo
-/// kabisa ambayo ina angalau [minPixels] pixel za skrini, ili namba
-/// zisigongane (zoom ndogo → hatua kubwa; zoom kubwa → hatua ndogo).
+/// Spacing between ruler numbers at a given [scale]: the smallest step
+/// that is at least [minPixels] screen pixels, so the numbers don't
+/// overlap (zoomed out → big steps; zoomed in → small steps).
 double rulerStep(double scale, {double minPixels = 56}) {
   for (final s in _niceSteps) {
     if (s * scale >= minPixels) return s;
@@ -83,19 +83,19 @@ double rulerStep(double scale, {double minPixels = 56}) {
   return _niceSteps.last;
 }
 
-/// Mstatili unaozunguka mistatili yote.
+/// The rectangle around all the rectangles.
 Rect boundsOf(Iterable<Rect> rects) =>
     rects.reduce((a, b) => a.expandToInclude(b));
 
-/// Zungusha namba hadi nafasi 2 za desimali (kuepuka 15.000000001).
+/// Round to 2 decimal places (avoids 15.000000001).
 double tidy(double v) => (v * 100).roundToDouble() / 100;
 
-/// Upana/urefu mdogo kabisa wa kipengele kinachobadilishwa ukubwa.
+/// Smallest width/height of an element being resized.
 const minElementSize = Size(8, 4);
 
-/// Mstatili mpya baada ya kuburuta kishiko [handle] kwa [delta] (nafasi
-/// ya artboard). Ukingo ulio kinyume haubadiliki; [keepAspect] (Shift)
-/// inahifadhi uwiano wa upana/urefu kwenye kona.
+/// The new rectangle after dragging [handle] by [delta] (artboard
+/// coordinates). The opposite edge stays put; [keepAspect] (Shift)
+/// keeps the width/height ratio on corners.
 Rect resizeRect(
   Rect start,
   Alignment handle,
@@ -114,14 +114,14 @@ Rect resizeRect(
   var h = max(minSize.height, bottom - top);
   if (keepAspect && handle.x != 0 && handle.y != 0 && start.height > 0) {
     final ratio = start.width / start.height;
-    // Fuata mhimili uliosogea zaidi
+    // Follow the axis that moved the most
     if (w / start.width >= h / start.height) {
       h = (w / ratio).roundToDouble();
     } else {
       w = (h * ratio).roundToDouble();
     }
   }
-  // Kingo zisizoburutwa zinabaki pale pale
+  // Edges that aren't dragged stay where they are
   final l = handle.x < 0 ? start.right - w : start.left;
   final t = handle.y < 0 ? start.bottom - h : start.top;
   return Rect.fromLTWH(l, t, w, h);
