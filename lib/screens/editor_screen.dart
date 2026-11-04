@@ -12,6 +12,7 @@ import '../services/project_storage.dart';
 import '../state/editor_controller.dart';
 import '../widgets/canvas_settings.dart';
 import '../widgets/design_canvas.dart';
+import 'export_image_dialog.dart';
 import 'run_screen.dart';
 import '../widgets/properties_panel.dart';
 import '../widgets/side_panel.dart';
@@ -43,6 +44,9 @@ class _EditorScreenState extends State<EditorScreen> {
   /// inapata nafasi zaidi).
   bool _leftOpen = true;
   bool _rightOpen = true;
+
+  void _exportImage() =>
+      showExportImage(context, pages: c.pages, initialIndex: c.pageIndex);
 
   void _toggleLeft() => setState(() => _leftOpen = !_leftOpen);
   void _toggleRight() => setState(() => _rightOpen = !_rightOpen);
@@ -106,6 +110,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Map<ShortcutActivator, VoidCallback> get _shortcuts => {
+    const SingleActivator(LogicalKeyboardKey.keyE, meta: true, shift: true):
+        _exportImage,
+    const SingleActivator(LogicalKeyboardKey.keyE, control: true, shift: true):
+        _exportImage,
     const SingleActivator(LogicalKeyboardKey.backslash, meta: true):
         _toggleFocusCanvas,
     const SingleActivator(LogicalKeyboardKey.backslash, control: true):
@@ -432,6 +440,14 @@ class _EditorScreenState extends State<EditorScreen> {
                         child: const ListTile(
                           leading: Icon(AppIcons.edit),
                           title: Text('Badilisha jina la mradi'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: _exportImage,
+                        child: const ListTile(
+                          leading: Icon(AppIcons.image),
+                          title: Text('Export image (PNG)'),
+                          trailing: Text('⇧⌘E'),
                         ),
                       ),
                       PopupMenuItem(
