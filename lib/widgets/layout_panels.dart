@@ -7,7 +7,7 @@ import '../models/ui_element.dart';
 import '../state/editor_controller.dart';
 import 'properties_panel.dart' show PropField;
 
-/// Kichwa kidogo cha sehemu (k.m. "Alignment").
+/// A small section heading (e.g. "Alignment").
 class SectionLabel extends StatelessWidget {
   const SectionLabel(this.text, {super.key, this.trailing});
 
@@ -49,13 +49,13 @@ class _ToolButton extends StatelessWidget {
   );
 }
 
-/// Ikoni ya kusambaza: mistari mitatu sawa (wima au mlalo).
+/// Distribute icon: three equal bars (vertical or horizontal).
 class _DistIcon extends StatelessWidget {
   const _DistIcon({required this.vertical, required this.at});
 
   final bool vertical;
 
-  /// -1 = kingo za mwanzo, 0 = vituo, 1 = kingo za mwisho
+  /// -1 = start edges, 0 = centers, 1 = end edges
   final double at;
 
   @override
@@ -108,7 +108,7 @@ class _DistPainter extends CustomPainter {
       old.vertical != vertical || old.at != at || old.color != color;
 }
 
-/// Alignment, distribution na nafasi kwa vipengele vilivyochaguliwa.
+/// Alignment, distribution and spacing for the selected elements.
 class AlignmentSection extends StatelessWidget {
   const AlignmentSection({super.key, required this.controller});
 
@@ -135,10 +135,10 @@ class AlignmentSection extends StatelessWidget {
             single ||
                     v.alignTo == AlignTo.artboard ||
                     v.alignTo == AlignTo.parent
-                ? 'kwa artboard'
+                ? 'to artboard'
                 : v.alignTo == AlignTo.keyObject
-                ? 'kwa kipengele kikuu'
-                : 'kwa uteuzi',
+                ? 'to key object'
+                : 'to selection',
             style: TextStyle(
               fontSize: 11,
               color: Theme.of(context).colorScheme.outline,
@@ -149,33 +149,33 @@ class AlignmentSection extends StatelessWidget {
           children: [
             _ToolButton(
               AppIcons.alignLeft,
-              'Panga kushoto (Alt+A)',
+              'Align left (Alt+A)',
               a(AlignOp.left),
             ),
             _ToolButton(
               AppIcons.alignHCenter,
-              'Katikati mlalo (Alt+H)',
+              'Align horizontal centers (Alt+H)',
               a(AlignOp.hCenter),
             ),
             _ToolButton(
               AppIcons.alignRight,
-              'Panga kulia (Alt+D)',
+              'Align right (Alt+D)',
               a(AlignOp.right),
             ),
-            _ToolButton(AppIcons.alignTop, 'Panga juu (Alt+W)', a(AlignOp.top)),
+            _ToolButton(AppIcons.alignTop, 'Align top (Alt+W)', a(AlignOp.top)),
             _ToolButton(
               AppIcons.alignVCenter,
-              'Katikati wima (Alt+V)',
+              'Align vertical centers (Alt+V)',
               a(AlignOp.vCenter),
             ),
             _ToolButton(
               AppIcons.alignBottom,
-              'Panga chini (Alt+S)',
+              'Align bottom (Alt+S)',
               a(AlignOp.bottom),
             ),
             _ToolButton(
               AppIcons.alignCenter,
-              'Katikati pande zote (Alt+C)',
+              'Center both ways (Alt+C)',
               a(AlignOp.centerBoth),
             ),
           ],
@@ -187,7 +187,7 @@ class AlignmentSection extends StatelessWidget {
           isDense: true,
           isExpanded: true,
           decoration: const InputDecoration(
-            labelText: 'Panga kwa (align to)',
+            labelText: 'Align to',
             isDense: true,
           ),
           items: [
@@ -204,69 +204,69 @@ class AlignmentSection extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               c.selectedIds.length > 1
-                  ? 'Kipengele kikuu ni chenye mpaka mnene; bonyeza kingine '
-                        'kilichochaguliwa kukibadilisha. Hakisogei.'
-                  : 'Chagua vipengele 2+ (Shift + bonyeza).',
+                  ? 'The key object has a thick border; tap another '
+                        'selected element to change it. It stays put.'
+                  : 'Select 2+ elements (Shift + tap).',
               style: TextStyle(
                 fontSize: 11.5,
                 color: Theme.of(context).colorScheme.outline,
               ),
             ),
           ),
-        const SectionLabel('Distribution (vipengele 3+)'),
+        const SectionLabel('Distribution (3+ elements)'),
         Wrap(
           children: [
             _ToolButton(
               AppIcons.distributeH,
-              'Sambaza kingo za kushoto',
+              'Distribute left edges',
               d(DistributeOp.left),
               child: const _DistIcon(vertical: false, at: -1),
             ),
             _ToolButton(
               AppIcons.distributeH,
-              'Sambaza vituo vya mlalo',
+              'Distribute horizontal centers',
               d(DistributeOp.hCenter),
               child: const _DistIcon(vertical: false, at: 0),
             ),
             _ToolButton(
               AppIcons.distributeH,
-              'Sambaza kingo za kulia',
+              'Distribute right edges',
               d(DistributeOp.right),
               child: const _DistIcon(vertical: false, at: 1),
             ),
             _ToolButton(
               AppIcons.distributeV,
-              'Sambaza kingo za juu',
+              'Distribute top edges',
               d(DistributeOp.top),
               child: const _DistIcon(vertical: true, at: -1),
             ),
             _ToolButton(
               AppIcons.distributeV,
-              'Sambaza vituo vya wima',
+              'Distribute vertical centers',
               d(DistributeOp.vCenter),
               child: const _DistIcon(vertical: true, at: 0),
             ),
             _ToolButton(
               AppIcons.distributeV,
-              'Sambaza kingo za chini',
+              'Distribute bottom edges',
               d(DistributeOp.bottom),
               child: const _DistIcon(vertical: true, at: 1),
             ),
             _ToolButton(
               AppIcons.spaceH,
-              'Nafasi sawa mlalo',
+              'Equal horizontal spacing',
               dist ? () => c.distributeSpacingOn(Axis.horizontal) : null,
             ),
             _ToolButton(
               AppIcons.spaceV,
-              'Nafasi sawa wima',
+              'Equal vertical spacing',
               dist ? () => c.distributeSpacingOn(Axis.vertical) : null,
             ),
           ],
         ),
-        const SectionLabel('Nafasi (spacing)'),
+        const SectionLabel('Spacing'),
         _GapRow(
-          label: 'Mlalo',
+          label: 'Horizontal',
           value: v.hGap,
           enabled: space,
           onChanged: (g) => c.setView(v.copyWith(hGap: g)),
@@ -274,7 +274,7 @@ class AlignmentSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _GapRow(
-          label: 'Wima',
+          label: 'Vertical',
           value: v.vGap,
           enabled: space,
           onChanged: (g) => c.setView(v.copyWith(vGap: g)),
@@ -335,7 +335,7 @@ class _GapRow extends StatelessWidget {
           ),
         ),
         PopupMenuButton<double>(
-          tooltip: 'Nafasi za kawaida',
+          tooltip: 'Common spacings',
           icon: const Icon(AppIcons.more, size: 18),
           onSelected: onChanged,
           itemBuilder: (_) => [
@@ -349,15 +349,15 @@ class _GapRow extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.symmetric(horizontal: 12),
           ),
-          child: const Text('Weka'),
+          child: const Text('Apply'),
         ),
       ],
     );
   }
 }
 
-/// Sehemu ndogo ya namba (inatumia [PropField]: haipotezi focus wala
-/// kufuta kipengele wakati wa kuandika).
+/// A small number field (uses [PropField]: it keeps focus and never
+/// deletes the element while typing).
 class _NumberBox extends StatelessWidget {
   const _NumberBox({
     super.key,
@@ -391,7 +391,7 @@ class _NumberBox extends StatelessWidget {
   }
 }
 
-/// Mpangilio wa maandishi NDANI ya kipengele (si kusogeza kipengele).
+/// Text alignment INSIDE the element (not moving the element).
 class TextAlignSection extends StatelessWidget {
   const TextAlignSection({
     super.key,
@@ -409,7 +409,7 @@ class TextAlignSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Mpangilio wa maandishi (ndani ya kisanduku)'),
+        const SectionLabel('Text alignment (inside the box)'),
         SegmentedButton<TextAlign>(
           showSelectedIcon: false,
           style: const ButtonStyle(visualDensity: VisualDensity.compact),
@@ -417,17 +417,17 @@ class TextAlignSection extends StatelessWidget {
             ButtonSegment(
               value: TextAlign.left,
               icon: Icon(AppIcons.textLeft, size: 18),
-              tooltip: 'Kushoto',
+              tooltip: 'Left',
             ),
             ButtonSegment(
               value: TextAlign.center,
               icon: Icon(AppIcons.textCenter, size: 18),
-              tooltip: 'Katikati',
+              tooltip: 'Center',
             ),
             ButtonSegment(
               value: TextAlign.right,
               icon: Icon(AppIcons.textRight, size: 18),
-              tooltip: 'Kulia',
+              tooltip: 'Right',
             ),
             ButtonSegment(
               value: TextAlign.justify,
@@ -444,9 +444,9 @@ class TextAlignSection extends StatelessWidget {
           showSelectedIcon: false,
           style: const ButtonStyle(visualDensity: VisualDensity.compact),
           segments: const [
-            ButtonSegment(value: VAlign.top, label: Text('Juu')),
-            ButtonSegment(value: VAlign.middle, label: Text('Kati')),
-            ButtonSegment(value: VAlign.bottom, label: Text('Chini')),
+            ButtonSegment(value: VAlign.top, label: Text('Top')),
+            ButtonSegment(value: VAlign.middle, label: Text('Middle')),
+            ButtonSegment(value: VAlign.bottom, label: Text('Bottom')),
           ],
           selected: {e.vAlign},
           onSelectionChanged: (s) =>
@@ -457,7 +457,7 @@ class TextAlignSection extends StatelessWidget {
   }
 }
 
-/// Prototype: kubonyeza kipengele kwenye "Run" kunafungua skrini nyingine.
+/// Prototype: tapping the element in "Run" opens another screen.
 class LinkSection extends StatelessWidget {
   const LinkSection({
     super.key,
@@ -488,11 +488,11 @@ class LinkSection extends StatelessWidget {
           isDense: true,
           isExpanded: true,
           decoration: const InputDecoration(
-            labelText: 'Ukibonyeza, nenda kwenye',
+            labelText: 'On tap, go to',
             isDense: true,
           ),
           items: [
-            const DropdownMenuItem(child: Text('— hakuna —')),
+            const DropdownMenuItem(child: Text('— none —')),
             for (final p in targets)
               DropdownMenuItem(value: p.id, child: Text(p.name)),
           ],
@@ -507,7 +507,7 @@ class LinkSection extends StatelessWidget {
   }
 }
 
-/// Gridi za artboard: miraba, safu (columns), mistari (rows).
+/// Artboard grids: squares, columns and rows.
 class GridSection extends StatelessWidget {
   const GridSection({super.key, required this.controller});
 
@@ -524,7 +524,7 @@ class GridSection extends StatelessWidget {
       void onChanged(TrackGrid next) =>
           t.enabled == next.enabled && t.stretch == next.stretch
           ? c.setGrid(
-              title.startsWith('Safu')
+              title.startsWith('Columns')
                   ? g.copyWith(columns: next)
                   : g.copyWith(rows: next),
               record: false,
@@ -548,7 +548,7 @@ class GridSection extends StatelessWidget {
                   child: _NumberBox(
                     key: ValueKey('$title-count'),
                     onFocus: c.checkpoint,
-                    label: 'Idadi',
+                    label: 'Count',
                     value: t.count.toDouble(),
                     onChanged: (n) =>
                         onChanged(t.copyWith(count: n.round().clamp(1, 48))),
@@ -587,7 +587,7 @@ class GridSection extends StatelessWidget {
                     ),
                     segments: const [
                       ButtonSegment(value: true, label: Text('Stretch')),
-                      ButtonSegment(value: false, label: Text('Katikati')),
+                      ButtonSegment(value: false, label: Text('Center')),
                     ],
                     selected: {t.stretch},
                     onSelectionChanged: (s) => onChanged(
@@ -604,7 +604,7 @@ class GridSection extends StatelessWidget {
                     child: _NumberBox(
                       key: ValueKey('$title-size'),
                       onFocus: c.checkpoint,
-                      label: 'Upana',
+                      label: 'Width',
                       value: t.size!,
                       onChanged: (n) => onChanged(t.copyWith(size: n)),
                     ),
@@ -621,9 +621,9 @@ class GridSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionLabel(
-          'Gridi',
+          'Grid',
           trailing: Tooltip(
-            message: 'Snap kwenye gridi',
+            message: 'Snap to grid',
             child: FilterChip(
               label: const Text('Snap'),
               visualDensity: VisualDensity.compact,
@@ -635,7 +635,7 @@ class GridSection extends StatelessWidget {
         SwitchListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
-          title: const Text('Gridi ya miraba'),
+          title: const Text('Square grid'),
           value: g.show,
           onChanged: (on) => set(g.copyWith(show: on)),
         ),
@@ -686,14 +686,14 @@ class GridSection extends StatelessWidget {
             ),
           ],
         ),
-        track('Safu (columns)', g.columns, (t) => set(g.copyWith(columns: t))),
-        track('Mistari (rows)', g.rows, (t) => set(g.copyWith(rows: t))),
+        track('Columns', g.columns, (t) => set(g.copyWith(columns: t))),
+        track('Rows', g.rows, (t) => set(g.copyWith(rows: t))),
       ],
     );
   }
 }
 
-/// Orodha ya guides za artboard na nafasi zake kamili.
+/// The artboard's guides and their exact positions.
 class GuidesSection extends StatelessWidget {
   const GuidesSection({super.key, required this.controller});
 
@@ -713,12 +713,12 @@ class GuidesSection extends StatelessWidget {
               ? null
               : TextButton(
                   onPressed: c.clearGuides,
-                  child: const Text('Futa zote'),
+                  child: const Text('Delete all'),
                 ),
         ),
         if (page.guides.isEmpty)
           Text(
-            'Buruta kutoka kwenye ruler ya juu (mlalo) au ya kushoto (wima).',
+            'Drag from the top ruler (horizontal) or the left ruler (vertical).',
             style: TextStyle(
               fontSize: 12,
               color: Theme.of(context).colorScheme.outline,
@@ -742,7 +742,7 @@ class GuidesSection extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: g.locked ? 'Fungua' : 'Funga',
+                tooltip: g.locked ? 'Unlock' : 'Lock',
                 visualDensity: VisualDensity.compact,
                 icon: Icon(
                   g.locked ? AppIcons.lock : AppIcons.unlock,
@@ -751,7 +751,7 @@ class GuidesSection extends StatelessWidget {
                 onPressed: () => c.toggleGuideLock(g.id),
               ),
               IconButton(
-                tooltip: 'Futa',
+                tooltip: 'Delete',
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(AppIcons.trash, size: 18),
                 onPressed: () => c.deleteGuide(g.id),
