@@ -6,6 +6,7 @@ import '../models/ui_element.dart';
 import '../state/editor_controller.dart';
 import 'icon_browser.dart';
 import 'layout_panels.dart';
+import 'reference_section.dart';
 import 'shape_picker.dart';
 
 const swatches = [
@@ -140,6 +141,7 @@ class PropertiesPanel extends StatelessWidget {
         value: page.background,
         onChanged: (col) => c.updatePage(page.copyWith(background: col)),
       ),
+      ReferenceSection(controller: c),
       GridSection(controller: c),
       GuidesSection(controller: c),
       const SizedBox(height: 24),
