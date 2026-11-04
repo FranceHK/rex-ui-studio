@@ -4,6 +4,7 @@ import '../canvas/layout.dart';
 import '../icons/app_icons.dart';
 import '../icons/icon_style.dart';
 import 'device_frame.dart';
+import 'reference_image.dart';
 
 const brandColor = Color(0xFF4F46E5);
 const inkColor = Color(0xFF101828);
@@ -373,6 +374,7 @@ class DesignPage {
     this.guides = const [],
     this.grid = const GridSettings(),
     this.rulerOrigin = Offset.zero,
+    this.reference,
   });
 
   final String id;
@@ -400,6 +402,9 @@ class DesignPage {
   /// Origin (0,0) of the rulers inside the artboard; Offset.zero = the
   /// top-left corner.
   final Offset rulerOrigin;
+
+  /// A picture to trace over (never exported).
+  final ReferenceImage? reference;
 
   /// Artboard size in portrait.
   Size get portraitSize => customSize ?? device.size;
@@ -430,6 +435,8 @@ class DesignPage {
     List<Guide>? guides,
     GridSettings? grid,
     Offset? rulerOrigin,
+    ReferenceImage? reference,
+    bool clearReference = false,
   }) {
     return DesignPage(
       id: id,
@@ -444,6 +451,7 @@ class DesignPage {
       guides: guides ?? this.guides,
       grid: grid ?? this.grid,
       rulerOrigin: rulerOrigin ?? this.rulerOrigin,
+      reference: clearReference ? null : reference ?? this.reference,
     );
   }
 
@@ -475,6 +483,7 @@ class DesignPage {
     if (guides.isNotEmpty) 'guides': [for (final g in guides) g.toJson()],
     'grid': grid.toJson(),
     if (rulerOrigin != Offset.zero) 'origin': [rulerOrigin.dx, rulerOrigin.dy],
+    if (reference case final r?) 'reference': r.toJson(),
   };
 
   factory DesignPage.fromJson(Map<String, dynamic> json) {
@@ -511,6 +520,9 @@ class DesignPage {
           ? const GridSettings()
           : GridSettings.fromJson(json['grid'] as Map<String, dynamic>),
       rulerOrigin: _offset(json['origin']) ?? Offset.zero,
+      reference: json['reference'] == null
+          ? null
+          : ReferenceImage.fromJson(json['reference'] as Map<String, dynamic>),
     );
   }
 }
