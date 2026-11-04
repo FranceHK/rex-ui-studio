@@ -5,7 +5,7 @@ import '../models/ui_element.dart';
 import 'device_preset.dart';
 import 'device_preset_repository.dart';
 
-/// Wima / mlalo wa preview na artboard.
+/// Portrait / landscape of the preview and the artboard.
 class OrientationController extends ChangeNotifier {
   bool landscape = false;
 
@@ -20,14 +20,14 @@ class OrientationController extends ChangeNotifier {
   Size apply(Size portrait) => landscape ? portrait.flipped : portrait;
 }
 
-/// Hali ya kifaa kinachokunjika: skrini gani inaonyeshwa.
+/// Foldable state: which screen is shown.
 class FoldableDisplayController extends ChangeNotifier {
   DevicePreset? _preset;
   DisplayRole role = DisplayRole.main;
 
   DevicePreset? get preset => _preset;
 
-  /// Weka kifaa kipya; vifaa vinavyokunjika vinaanza vikiwa vimefunguliwa.
+  /// Set a new device; foldables start unfolded.
   void setPreset(DevicePreset preset) {
     _preset = preset;
     role = preset.displays.first.role;
@@ -36,7 +36,7 @@ class FoldableDisplayController extends ChangeNotifier {
 
   bool get foldable => _preset?.foldable ?? false;
 
-  /// Kifaa kimekunjwa (skrini ya nje / cover inaonyeshwa).
+  /// The device is folded (the outer screen / cover is shown).
   bool get folded => role.folded;
 
   void setFolded(bool value) {
@@ -55,12 +55,12 @@ class FoldableDisplayController extends ChangeNotifier {
   DeviceDisplay? get display => _preset?.display(role);
 }
 
-/// Inatengeneza artboard (DesignPage) kutoka preset ya kifaa.
+/// Builds an artboard (DesignPage) from a device preset.
 abstract final class ArtboardFactory {
-  /// Artboard ya skrini moja ya [preset].
+  /// An artboard for one screen of [preset].
   ///
-  /// [size] ikitolewa (ukiwa wima) na ikitofautiana na frame ya kifaa,
-  /// inahifadhiwa kama ukubwa uliobadilishwa; metadata ya kifaa inabaki.
+  /// When [size] is given (in portrait) and differs from the device frame,
+  /// it's stored as a custom size; the device metadata stays.
   static DesignPage fromPreset(
     String id,
     DevicePreset preset, {
@@ -83,7 +83,7 @@ abstract final class ArtboardFactory {
     );
   }
 
-  /// Artboard ya preset ya mtumiaji.
+  /// An artboard for a user preset.
   static DesignPage fromCustom(
     String id,
     CustomPreset preset, {
