@@ -853,6 +853,17 @@ class _DesignCanvasState extends State<DesignCanvas> {
                       child: ColoredBox(color: p.background),
                     ),
                   ),
+                  // The grid sits on the background, beneath the elements
+                  // (always present so toggling it doesn't shift them)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: p.grid.anyVisible
+                            ? GridPainter(p.grid, scale)
+                            : null,
+                      ),
+                    ),
+                  ),
                   for (final e in p.elements)
                     _element(
                       i,
@@ -864,12 +875,6 @@ class _DesignCanvasState extends State<DesignCanvas> {
                           c.selectedIds.length > 1,
                       single: active && c.selectedIds.length == 1,
                       scale: scale,
-                    ),
-                  if (p.grid.anyVisible)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: CustomPaint(painter: GridPainter(p.grid, scale)),
-                      ),
                     ),
                   if (p.safeArea case final insets? when p.showSafeArea)
                     Positioned.fill(child: SafeAreaGuides(insets: insets)),
