@@ -1,9 +1,9 @@
 import 'package:amazing_icons/broken.dart';
 import 'package:flutter/widgets.dart';
 
-/// Icons zote za app hii (mtindo wa Broken).
+/// All of this app's icons (Broken style).
 abstract final class AppIcons {
-  // Vipengele
+  // Elements
   static const text = AmazingIconBroken.text;
   static const button = AmazingIconBroken.mouseSquare;
   static const input = AmazingIconBroken.keyboard;
@@ -16,14 +16,14 @@ abstract final class AppIcons {
   static const toggle = AmazingIconBroken.toggleOn;
   static const divider = AmazingIconBroken.minus;
 
-  // Vifaa
+  // Devices
   static const phone = AmazingIconBroken.mobile;
   static const foldable = AmazingIconBroken.mobileProgramming;
   static const tablet = AmazingIconBroken.monitorMobbile;
   static const computer = AmazingIconBroken.monitor;
   static const watch = AmazingIconBroken.watch;
 
-  // Urambazaji na vitendo
+  // Navigation and actions
   static const components = AmazingIconBroken.category;
   static const icons = AmazingIconBroken.magicStar;
   static const devices = AmazingIconBroken.devices1;
@@ -67,7 +67,7 @@ abstract final class AppIcons {
   static const menu = AmazingIconBroken.menu;
   static const empty = AmazingIconBroken.danger;
 
-  // Mpangilio (alignment), rulers, gridi, mwonekano
+  // Layout (alignment), rulers, grid, view
   static const alignLeft = AmazingIconBroken.alignLeft;
   static const alignHCenter = AmazingIconBroken.alignHorizontally;
   static const alignRight = AmazingIconBroken.alignRight;
@@ -93,7 +93,7 @@ abstract final class AppIcons {
   static const previous = AmazingIconBroken.arrowLeft2;
 }
 
-/// Icons za bottom nav kwenye michoro (mtindo wa Broken).
+/// Bottom nav icons in designs (Broken style).
 const navBarIconNames = ['home', 'searchNormal1', 'heart', 'user'];
 
 const IconData navBarMenuIcon = AmazingIconBroken.menu;
