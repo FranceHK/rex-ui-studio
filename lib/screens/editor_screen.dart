@@ -581,8 +581,8 @@ class _SaveIndicator extends StatelessWidget {
     final (icon, label, color) = switch (state) {
       _SaveState.loading => (AppIcons.clock, 'Opening…', scheme.outline),
       _SaveState.saving => (AppIcons.saving, 'Saving…', scheme.outline),
-      _SaveState.saved => (AppIcons.saved, 'Imehifadhiwa', scheme.outline),
-      _SaveState.error => (AppIcons.error, 'Haijahifadhiwa', scheme.error),
+      _SaveState.saved => (AppIcons.saved, 'Saved', scheme.outline),
+      _SaveState.error => (AppIcons.error, 'Not saved', scheme.error),
     };
     return Row(
       mainAxisSize: MainAxisSize.min,
