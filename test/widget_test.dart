@@ -69,7 +69,10 @@ void main() {
     await tester.tap(find.text('Icons').first);
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.widgetWithText(TextField, 'Tafuta icon… (k.m. home, arrow, wallet)'),
+      find.widgetWithText(
+        TextField,
+        'Search icons… (e.g. home, arrow, wallet)',
+      ),
       'wallet add',
     );
     await tester.tap(find.text('Bulk'));

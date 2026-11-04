@@ -4,9 +4,9 @@ import '../icons/app_icons.dart';
 import '../icons/icon_style.dart';
 import '../models/ui_element.dart';
 
-/// Kutafuta icons za amazing_icons kwa jina na mtindo.
-/// Kubofya icon kunaita [onPick]; ikiwa [draggable], icon inaweza
-/// kuburutwa moja kwa moja kwenye skrini.
+/// Search the amazing_icons icons by name and style.
+/// Tapping an icon calls [onPick]; when [draggable], the icon can be
+/// dragged straight onto the screen.
 class IconBrowser extends StatefulWidget {
   const IconBrowser({
     super.key,
@@ -43,7 +43,7 @@ class _IconBrowserState extends State<IconBrowser> {
         TextField(
           onChanged: (v) => setState(() => _query = v),
           decoration: const InputDecoration(
-            hintText: 'Tafuta icon… (k.m. home, arrow, wallet)',
+            hintText: 'Search icons… (e.g. home, arrow, wallet)',
             prefixIcon: Icon(AppIcons.search),
             isDense: true,
           ),
@@ -66,7 +66,7 @@ class _IconBrowserState extends State<IconBrowser> {
         const SizedBox(height: 10),
         Text(
           '${names.length} icons · ${_style.label}'
-          '${widget.draggable ? ' · bofya au buruta' : ''}',
+          '${widget.draggable ? ' · tap or drag' : ''}',
           style: TextStyle(color: scheme.outline, fontSize: 12),
         ),
         const SizedBox(height: 8),
@@ -74,7 +74,7 @@ class _IconBrowserState extends State<IconBrowser> {
           child: names.isEmpty
               ? Center(
                   child: Text(
-                    'Hakuna icon inayolingana na "$_query"',
+                    'No icons match "$_query"',
                     style: TextStyle(color: scheme.outline),
                   ),
                 )
