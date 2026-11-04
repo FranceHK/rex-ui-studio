@@ -43,9 +43,9 @@ void main() {
     expect(find.text('App ya Benki'), findsOneWidget);
     expect(find.textContaining('Galaxy S25 · 411×891'), findsWidgets);
 
-    await tester.tap(find.text('Kitufe'));
+    await tester.tap(find.text('Button'));
     await tester.pumpAndSettle();
-    expect(find.text('Endelea'), findsWidgets);
+    expect(find.text('Continue'), findsWidgets);
     expect(find.text('Layout'), findsOneWidget);
 
     // Kurudi kwenye ukurasa wa mwanzo kunaonyesha mradi uliohifadhiwa
@@ -78,6 +78,12 @@ void main() {
 
     await tester.tap(find.byTooltip('walletAdd'));
     await tester.pumpAndSettle();
+    // Icon details sit further down the properties list
+    await tester.dragUntilVisible(
+      find.text('walletAdd'),
+      find.text('Layout'),
+      const Offset(0, -200),
+    );
     expect(find.text('walletAdd'), findsWidgets);
     expect(find.text('Bulk'), findsWidgets);
   });
