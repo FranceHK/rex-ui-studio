@@ -320,6 +320,36 @@ void main() {
     });
   });
 
+  group('shapes', () {
+    test('kila umbo lina border na code; JSON inahifadhi umbo', () {
+      for (final shape in ElementShape.values) {
+        expect(shape.border(12, const Size(100, 80)), isA<ShapeBorder>());
+        expect(shape.code(12, const Size(100, 80)), isNotEmpty);
+      }
+      expect(
+        ElementShape.ellipse.border(0, const Size(10, 10)),
+        isA<OvalBorder>(),
+      );
+      expect(
+        ElementShape.star.border(0, const Size(10, 10)),
+        isA<StarBorder>(),
+      );
+
+      final c = EditorController()
+        ..addElement(ElementType.container, shape: ElementShape.star);
+      final e = c.selected!;
+      expect(e.shape, ElementShape.star);
+      expect(e.rect.width, e.rect.height, reason: 'umbo jipya ni mraba');
+      final back = UiElement.fromJson(
+        jsonDecode(jsonEncode(e.toJson())) as Map<String, dynamic>,
+      );
+      expect(back.shape, ElementShape.star);
+      // Mstatili ni chaguo-msingi na hauandikwi kwenye JSON
+      c.addElement(ElementType.container);
+      expect(c.selected!.toJson().containsKey('shape'), isFalse);
+    });
+  });
+
   group('artboards', () {
     test('kuongeza kifaa kunaongeza artboard, hakubadilishi', () {
       final c = EditorController();
