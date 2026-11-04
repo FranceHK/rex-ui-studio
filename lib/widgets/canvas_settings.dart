@@ -5,9 +5,9 @@ import '../icons/app_icons.dart';
 import '../state/editor_controller.dart';
 import 'layout_panels.dart';
 
-/// Fungua dirisha la "Mipangilio": kalamu na vidole, mwonekano (rulers,
-/// guides, gridi), snapping na njia za mkato za kibodi. Mabadiliko
-/// yanaonekana papo hapo na yanahifadhiwa pamoja na mradi.
+/// Opens the "Settings" dialog: pen and fingers, view (rulers, guides,
+/// grid), snapping and keyboard shortcuts. Changes show up right away and
+/// are saved with the project.
 Future<void> showCanvasSettings(
   BuildContext context,
   EditorController controller,
@@ -65,12 +65,12 @@ class CanvasSettings extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Mipangilio',
+                      'Settings',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Funga',
+                    tooltip: 'Close',
                     icon: const Icon(AppIcons.close),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -83,26 +83,26 @@ class CanvasSettings extends StatelessWidget {
                 shrinkWrap: true,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  const _Header('Kalamu na vidole'),
+                  const _Header('Pen and fingers'),
                   toggle(
-                    'Kalamu tu (zuia kiganja)',
+                    'Pen only (palm rejection)',
                     v.penMode,
                     (on) => set(v.copyWith(penOnly: on)),
                     icon: AppIcons.pen,
                     subtitle:
-                        'Kalamu inahariri; kidole kimoja hakigusi vitu. '
-                        'Vidole viwili: zoom na kusogeza canvas.',
+                        'The pen edits; a single finger doesn\'t touch elements. '
+                        'Two fingers: zoom and pan the canvas.',
                   ),
                   toggle(
-                    'Funga mwonekano',
+                    'Lock view',
                     v.lockView,
                     (on) => set(v.copyWith(lockView: on)),
                     icon: AppIcons.lock,
                     subtitle:
-                        'Canvas haisogei wala kuzoom ukiwa unahariri sehemu '
-                        'fulani (vitufe vya zoom bado vinafanya kazi).',
+                        'The canvas doesn\'t pan or zoom while you edit a '
+                        'detail (the zoom buttons still work).',
                   ),
-                  const _Header('Mwonekano'),
+                  const _Header('View'),
                   toggle(
                     'Rulers',
                     v.showRulers,
@@ -115,12 +115,12 @@ class CanvasSettings extends StatelessWidget {
                     (on) => set(v.copyWith(showGuides: on)),
                   ),
                   toggle(
-                    'Funga guides',
+                    'Lock guides',
                     v.guidesLocked,
                     (on) => set(v.copyWith(guidesLocked: on)),
                   ),
                   ListTile(
-                    title: const Text('Rangi ya guides'),
+                    title: const Text('Guide color'),
                     trailing: Wrap(
                       spacing: 8,
                       children: [
@@ -152,18 +152,18 @@ class CanvasSettings extends StatelessWidget {
                           onPressed: c.page.guides.isEmpty
                               ? null
                               : c.clearGuides,
-                          child: const Text('Futa guides zote'),
+                          child: const Text('Clear all guides'),
                         ),
                         OutlinedButton(
                           onPressed: c.page.rulerOrigin == Offset.zero
                               ? null
                               : c.resetRulerOrigin,
-                          child: const Text('Rudisha origin ya rulers'),
+                          child: const Text('Reset ruler origin'),
                         ),
                       ],
                     ),
                   ),
-                  const _Header('Gridi (skrini hii)'),
+                  const _Header('Grid (this screen)'),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GridSection(controller: c),
@@ -172,38 +172,38 @@ class CanvasSettings extends StatelessWidget {
                   toggle('Snapping', v.snap, (on) => set(v.copyWith(snap: on))),
                   if (v.snap) ...[
                     toggle(
-                      'Snap kwenye gridi',
+                      'Snap to grid',
                       v.snapGrid,
                       (on) => set(v.copyWith(snapGrid: on)),
                     ),
                     toggle(
-                      'Snap kwenye guides',
+                      'Snap to guides',
                       v.snapGuides,
                       (on) => set(v.copyWith(snapGuides: on)),
                     ),
                     toggle(
-                      'Snap kwenye vipengele',
+                      'Snap to elements',
                       v.snapObjects,
                       (on) => set(v.copyWith(snapObjects: on)),
                     ),
                     toggle(
-                      'Snap kwenye kingo za skrini',
+                      'Snap to screen edges',
                       v.snapArtboard,
                       (on) => set(v.copyWith(snapArtboard: on)),
                     ),
                   ],
                   toggle(
-                    'Smart guides (mistari ya kupanga)',
+                    'Smart guides',
                     v.smartGuides,
                     (on) => set(v.copyWith(smartGuides: on)),
                   ),
                   toggle(
-                    'Vipimo vya umbali',
+                    'Distance measurements',
                     v.showDistances,
                     (on) => set(v.copyWith(showDistances: on)),
                   ),
                   const ExpansionTile(
-                    title: Text('Njia za mkato (kibodi)'),
+                    title: Text('Keyboard shortcuts'),
                     childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 12),
                     expandedCrossAxisAlignment: CrossAxisAlignment.start,
                     children: [Text(_shortcuts)],
@@ -219,16 +219,16 @@ class CanvasSettings extends StatelessWidget {
 }
 
 const _shortcuts =
-    '• Delete — futa · Cmd/Ctrl + A — chagua vyote\n'
-    '• Shift + bonyeza / buruta kwenye skrini — chagua vingi\n'
-    '• Cmd/Ctrl + D — nakili · Cmd/Ctrl + Z — rudisha\n'
-    '• Mishale — sogeza (Shift = 10)\n'
-    '• Alt + A/H/D — panga kushoto/katikati/kulia\n'
-    '• Alt + W/V/S — panga juu/katikati/chini\n'
+    '• Delete — delete · Cmd/Ctrl + A — select all\n'
+    '• Shift + tap / drag on the screen — multi-select\n'
+    '• Cmd/Ctrl + D — duplicate · Cmd/Ctrl + Z — undo\n'
+    '• Arrows — move (Shift = 10)\n'
+    '• Alt + A/H/D — align left/center/right\n'
+    '• Alt + W/V/S — align top/middle/bottom\n'
     '• Shift + R — rulers · Cmd/Ctrl + ; — guides\n'
-    "• Cmd/Ctrl + ' — gridi · Ctrl wakati wa kuburuta — bila snap\n"
-    '• Alt — ona umbali · scroll — sogeza · Cmd + scroll — zoom\n'
-    '• Buruta jina la skrini — hamisha artboard';
+    "• Cmd/Ctrl + ' — grid · Ctrl while dragging — no snap\n"
+    '• Alt — show distances · scroll — pan · Cmd + scroll — zoom\n'
+    '• Drag a screen name — move the artboard';
 
 class _Header extends StatelessWidget {
   const _Header(this.text);
