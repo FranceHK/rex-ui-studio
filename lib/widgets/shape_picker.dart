@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/ui_element.dart';
 
-/// Picha ndogo ya umbo (kwa vitufe na menyu).
+/// A small picture of a shape (for buttons and menus).
 class ShapePreview extends StatelessWidget {
   const ShapePreview(this.shape, {super.key, this.size = 20, this.color});
 
@@ -25,7 +25,7 @@ class ShapePreview extends StatelessWidget {
   }
 }
 
-/// Chagua umbo: vitufe vya maumbo yote, kilichochaguliwa kimeangaziwa.
+/// Shape picker: buttons for every shape, the selected one highlighted.
 class ShapePicker extends StatelessWidget {
   const ShapePicker({super.key, required this.value, required this.onChanged});
 
@@ -68,7 +68,7 @@ class ShapePicker extends StatelessWidget {
   }
 }
 
-/// Menyu ya maumbo inayotokea juu ya [context] (k.m. kigae cha Box).
+/// A shape menu that opens over [context] (e.g. the Box tile).
 Future<ElementShape?> showShapeMenu(BuildContext context) {
   final box = context.findRenderObject()! as RenderBox;
   final overlay = Overlay.of(context).context.findRenderObject()! as RenderBox;
