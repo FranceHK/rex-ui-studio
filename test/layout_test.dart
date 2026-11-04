@@ -13,6 +13,7 @@ import 'package:rexa_ui_studio/canvas/snapping.dart';
 import 'package:rexa_ui_studio/main.dart';
 import 'package:rexa_ui_studio/models/device_frame.dart';
 import 'package:rexa_ui_studio/models/ui_element.dart';
+import 'package:rexa_ui_studio/screens/export_image_dialog.dart';
 import 'package:rexa_ui_studio/screens/run_screen.dart';
 import 'package:rexa_ui_studio/services/project_storage.dart';
 import 'package:rexa_ui_studio/state/editor_controller.dart';
@@ -585,6 +586,28 @@ void main() {
     await tester.tap(find.byTooltip('Rudisha paneli (Cmd/Ctrl + \\)'));
     await tester.pumpAndSettle();
     expect(tester.getSize(canvas).width, full);
+  });
+
+  testWidgets('Export image: ukubwa wa PNG unafuata scale', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final device = deviceById('iphone-17-pro');
+    final page = DesignPage(id: 'p1', name: 'Login', device: device);
+    expect(imageFileName(page, 2), 'LoginScreen@2x.png');
+
+    await tester.pumpWidget(
+      MaterialApp(home: ExportImageDialog(pages: [page])),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ArtboardPicture), findsOneWidget);
+    expect(find.textContaining('804 × 1748 px'), findsOneWidget);
+
+    await tester.tap(find.text('3x'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('1206 × 2622 px'), findsOneWidget);
+    expect(find.textContaining('LoginScreen@3x.png'), findsOneWidget);
   });
 
   testWidgets('Run: kushuka chini na kufuata link', (tester) async {
