@@ -313,7 +313,7 @@ void main() {
     expect(find.textContaining('(makisio)'), findsWidgets);
     expect(find.textContaining('1080 × 2424 px'), findsWidgets);
 
-    await tester.tap(find.text('Mlalo'));
+    await tester.tap(find.text('Landscape'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tengeneza design'));
     await tester.pumpAndSettle();

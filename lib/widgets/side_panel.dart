@@ -11,18 +11,18 @@ import 'properties_panel.dart' show PropField;
 import 'shape_picker.dart';
 
 enum SideTab {
-  components('Vipengele', AppIcons.components),
+  components('Components', AppIcons.components),
   icons('Icons', AppIcons.icons),
-  devices('Vifaa', AppIcons.devices),
-  screens('Skrini', AppIcons.screens),
-  layers('Tabaka', AppIcons.layers);
+  devices('Devices', AppIcons.devices),
+  screens('Screens', AppIcons.screens),
+  layers('Layers', AppIcons.layers);
 
   const SideTab(this.label, this.icon);
   final String label;
   final IconData icon;
 }
 
-/// Navigation bar ya kushoto (rail) pamoja na paneli ya tab iliyochaguliwa.
+/// The left navigation rail plus the panel of the selected tab.
 class SidePanel extends StatefulWidget {
   const SidePanel({
     super.key,
@@ -33,10 +33,10 @@ class SidePanel extends StatefulWidget {
 
   final EditorController controller;
 
-  /// false = paneli imekunjwa: rail ya icons tu inaonekana.
+  /// false = the panel is collapsed: only the icon rail is visible.
   final bool expanded;
 
-  /// Kunja/funua paneli (null = haikunjiki, k.m. ndani ya drawer).
+  /// Collapse/expand the panel (null = not collapsible, e.g. in a drawer).
   final VoidCallback? onToggle;
 
   @override
@@ -50,7 +50,7 @@ class _SidePanelState extends State<SidePanel> {
   Widget build(BuildContext context) {
     final c = widget.controller;
     return Row(
-      // Ikikunjwa, upana ni wa rail tu
+      // When collapsed, the width is just the rail's
       mainAxisSize: widget.expanded ? MainAxisSize.max : MainAxisSize.min,
       children: [
         NavigationRail(
@@ -61,14 +61,14 @@ class _SidePanelState extends State<SidePanel> {
               ? null
               : IconButton(
                   tooltip: widget.expanded
-                      ? 'Kunja paneli (Cmd/Ctrl + \\)'
-                      : 'Funua paneli',
+                      ? 'Collapse panel (Cmd/Ctrl + \\)'
+                      : 'Expand panel',
                   icon: const Icon(AppIcons.panelLeft),
                   onPressed: widget.onToggle,
                 ),
           onDestinationSelected: (i) {
             setState(() => _tab = SideTab.values[i]);
-            // Ukibonyeza tab paneli ikiwa imekunjwa, inafunguka
+            // Tapping a tab while collapsed expands the panel
             if (!widget.expanded) widget.onToggle?.call();
           },
           selectedIndex: widget.expanded ? _tab.index : null,
@@ -134,7 +134,7 @@ class _ComponentsTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       children: [
         Text(
-          'Buruta kwenye skrini, au bofya kuongeza katikati.',
+          'Drag onto the screen, or tap to add it in the center.',
           style: TextStyle(color: scheme.outline, fontSize: 12),
         ),
         const SizedBox(height: 12),
@@ -167,7 +167,7 @@ class _ComponentsTab extends StatelessWidget {
                 ),
                 child: _ComponentTile(
                   type: t,
-                  // Box: chagua umbo kwanza
+                  // Box: pick a shape first
                   onTap: t == ElementType.container
                       ? (tile) async {
                           final shape = await showShapeMenu(tile);
@@ -230,7 +230,7 @@ class _ComponentTile extends StatelessWidget {
 
   final ElementType type;
 
-  /// Inapewa context ya kigae (kwa menyu inayotokea juu yake).
+  /// Gets the tile's context (for the menu that opens over it).
   final void Function(BuildContext tile) onTap;
 
   @override
@@ -295,7 +295,7 @@ class _DevicesTabState extends State<_DevicesTab> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       children: [
-        // Kifaa cha sasa na mwelekeo
+        // Current device and orientation
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -316,14 +316,14 @@ class _DevicesTabState extends State<_DevicesTab> {
                     ),
                     Text(
                       '${page.size.width.round()} × ${page.size.height.round()}'
-                      ' $unit${page.resized ? ' · imebadilishwa' : ''}',
+                      ' $unit${page.resized ? ' · resized' : ''}',
                       style: text.bodySmall,
                     ),
                     if (display != null)
                       Text(
                         '${display.physical.width.round()} × '
-                        '${display.physical.height.round()} px halisi'
-                        '${display.logicalVerified ? '' : ' · dp ni makisio'}',
+                        '${display.physical.height.round()} px physical'
+                        '${display.logicalVerified ? '' : ' · dp estimated'}',
                         style: text.bodySmall?.copyWith(color: scheme.outline),
                       ),
                   ],
@@ -336,8 +336,8 @@ class _DevicesTabState extends State<_DevicesTab> {
         SegmentedButton<bool>(
           showSelectedIcon: false,
           segments: const [
-            ButtonSegment(value: false, label: Text('Wima')),
-            ButtonSegment(value: true, label: Text('Mlalo')),
+            ButtonSegment(value: false, label: Text('Portrait')),
+            ButtonSegment(value: true, label: Text('Landscape')),
           ],
           selected: {page.landscape},
           onSelectionChanged: (s) => c.setLandscape(s.first),
@@ -347,7 +347,7 @@ class _DevicesTabState extends State<_DevicesTab> {
           SegmentedButton<bool>(
             showSelectedIcon: false,
             segments: [
-              const ButtonSegment(value: false, label: Text('Imefunguliwa')),
+              const ButtonSegment(value: false, label: Text('Unfolded')),
               ButtonSegment(
                 value: true,
                 label: Text(
@@ -355,7 +355,7 @@ class _DevicesTabState extends State<_DevicesTab> {
                         (d) => d.role == DisplayRole.cover,
                       )
                       ? 'Cover'
-                      : 'Imekunjwa',
+                      : 'Folded',
                 ),
               ),
             ],
@@ -367,10 +367,10 @@ class _DevicesTabState extends State<_DevicesTab> {
           SwitchListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             dense: true,
-            title: const Text('Miongozo ya safe area'),
+            title: const Text('Safe area guides'),
             subtitle: display!.safeAreaVerified
                 ? null
-                : const Text('Mwongozo wa makisio'),
+                : const Text('Estimated guide'),
             value: page.showSafeArea,
             onChanged: c.setShowSafeArea,
           ),
@@ -383,7 +383,7 @@ class _DevicesTabState extends State<_DevicesTab> {
                   key: ValueKey(
                     '${page.id}-${page.device.id}-${page.customSize}-cw',
                   ),
-                  label: 'Upana',
+                  label: 'Width',
                   numeric: true,
                   value: page.portraitSize.width.round().toString(),
                   onFocus: c.checkpoint,
@@ -396,7 +396,7 @@ class _DevicesTabState extends State<_DevicesTab> {
                   key: ValueKey(
                     '${page.id}-${page.device.id}-${page.customSize}-ch',
                   ),
-                  label: 'Urefu',
+                  label: 'Height',
                   numeric: true,
                   value: page.portraitSize.height.round().toString(),
                   onFocus: c.checkpoint,
@@ -412,7 +412,7 @@ class _DevicesTabState extends State<_DevicesTab> {
                 onPressed: c.resetSize,
                 icon: const Icon(AppIcons.undo, size: 16),
                 label: Text(
-                  'Rudisha ${page.device.size.width.round()}×'
+                  'Reset to ${page.device.size.width.round()}×'
                   '${page.device.size.height.round()}',
                 ),
               ),
@@ -420,8 +420,8 @@ class _DevicesTabState extends State<_DevicesTab> {
         ],
         const SizedBox(height: 16),
         Text(
-          'Bonyeza kifaa kuongeza skrini mpya kwenye canvas. '
-          'Kitufe ⇄ kinabadili kifaa cha skrini hii.',
+          'Tap a device to add a new screen to the canvas. '
+          'The ⇄ button changes this screen\'s device.',
           style: text.bodySmall?.copyWith(color: scheme.outline),
         ),
         const SizedBox(height: 8),
@@ -429,7 +429,7 @@ class _DevicesTabState extends State<_DevicesTab> {
           onChanged: (v) => setState(() => _query = v),
           decoration: InputDecoration(
             isDense: true,
-            hintText: 'Tafuta kifaa…',
+            hintText: 'Search devices…',
             prefixIcon: const Icon(AppIcons.search, size: 18),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           ),
@@ -481,17 +481,17 @@ class _DevicesTabState extends State<_DevicesTab> {
                 title: Text(d.name),
                 subtitle: Text(
                   d.id == customDeviceId
-                      ? 'ukubwa wowote'
+                      ? 'any size'
                       : '${d.size.width.round()}×${d.size.height.round()}',
                   style: text.labelSmall?.copyWith(color: scheme.outline),
                 ),
                 trailing: IconButton(
-                  tooltip: 'Badili kifaa cha skrini hii',
+                  tooltip: 'Change this screen\'s device',
                   visualDensity: VisualDensity.compact,
                   icon: const Icon(AppIcons.swap, size: 18),
                   onPressed: () => c.setDevice(d),
                 ),
-                // Bonyeza kifaa = ongeza artboard mpya (haibadilishi iliyopo)
+                // Tapping a device adds a new artboard (it doesn't change the current one)
                 onTap: () => c.addPage(d),
               ),
           ],
@@ -539,7 +539,7 @@ class _ScreensTab extends StatelessWidget {
             onTap: () => c.selectPage(i),
             trailing: c.pages.length > 1
                 ? IconButton(
-                    tooltip: 'Futa skrini',
+                    tooltip: 'Delete screen',
                     icon: const Icon(AppIcons.trash, size: 18),
                     onPressed: () => c.deletePage(i),
                   )
@@ -550,23 +550,23 @@ class _ScreensTab extends StatelessWidget {
           onPressed: () async {
             final build = await showNewDesign(
               context,
-              createLabel: 'Ongeza artboard',
+              createLabel: 'Add artboard',
             );
             if (build != null) c.addArtboard(build);
           },
           icon: const Icon(AppIcons.add),
-          label: const Text('Artboard mpya kutoka kifaa…'),
+          label: const Text('New artboard from device…'),
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: () => c.addPage(c.page.device),
           icon: const Icon(AppIcons.copy),
-          label: const Text('Ongeza skrini'),
+          label: const Text('Add screen'),
         ),
         const SizedBox(height: 6),
         Text(
-          '"Ongeza skrini" inatumia kifaa cha skrini ya sasa; ibadilishe '
-          'kwenye tab ya Vifaa.',
+          '"Add screen" uses the current screen\'s device; change it '
+          'in the Devices tab.',
           style: TextStyle(color: scheme.outline, fontSize: 12),
         ),
       ],
@@ -587,7 +587,7 @@ class _LayersTab extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
-          'Hakuna kipengele bado.',
+          'No elements yet.',
           style: TextStyle(color: scheme.outline),
         ),
       );
@@ -625,7 +625,7 @@ class _LayersTab extends StatelessWidget {
             ),
             onTap: () => c.select(e.id),
             trailing: IconButton(
-              tooltip: e.locked ? 'Fungua (unlock)' : 'Funga (lock)',
+              tooltip: e.locked ? 'Unlock' : 'Lock',
               visualDensity: VisualDensity.compact,
               icon: Icon(
                 e.locked ? AppIcons.lock : AppIcons.unlock,

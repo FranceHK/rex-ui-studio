@@ -565,13 +565,13 @@ void main() {
     final full = tester.getSize(canvas).width;
     expect(find.text('Maandishi'), findsOneWidget); // paneli ya vipengele
 
-    await tester.tap(find.byTooltip('Kunja paneli (Cmd/Ctrl + \\)'));
+    await tester.tap(find.byTooltip('Collapse panel (Cmd/Ctrl + \\)'));
     await tester.pumpAndSettle();
     expect(find.text('Maandishi'), findsNothing);
     expect(tester.getSize(canvas).width, greaterThan(full));
 
     // Kubonyeza tab kwenye rail kunafunua paneli tena
-    await tester.tap(find.text('Vipengele'));
+    await tester.tap(find.text('Components'));
     await tester.pumpAndSettle();
     expect(find.text('Maandishi'), findsOneWidget);
 
