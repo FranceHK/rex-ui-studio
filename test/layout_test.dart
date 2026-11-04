@@ -445,6 +445,47 @@ void main() {
     expect(zoom(), z1);
   });
 
+  testWidgets('paneli zinakunjwa na kufunuliwa; uwanja mzima', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final info = await ProjectStorage().create(
+      'Paneli',
+      EditorController().toJson(),
+    );
+    await tester.pumpWidget(const RexaStudioApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(info.name));
+    await tester.pumpAndSettle();
+
+    final canvas = find.byType(DesignCanvas);
+    final full = tester.getSize(canvas).width;
+    expect(find.text('Maandishi'), findsOneWidget); // paneli ya vipengele
+
+    await tester.tap(find.byTooltip('Kunja paneli (Cmd/Ctrl + \\)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Maandishi'), findsNothing);
+    expect(tester.getSize(canvas).width, greaterThan(full));
+
+    // Kubonyeza tab kwenye rail kunafunua paneli tena
+    await tester.tap(find.text('Vipengele'));
+    await tester.pumpAndSettle();
+    expect(find.text('Maandishi'), findsOneWidget);
+
+    // Uwanja mzima: paneli zote mbili zinakunjwa, kisha zinarudi
+    await tester.tap(
+      find.byTooltip('Uwanja mzima — kunja paneli (Cmd/Ctrl + \\)'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Sifa'), findsNothing);
+    final wide = tester.getSize(canvas).width;
+    expect(wide, greaterThan(full + 500));
+    await tester.tap(find.byTooltip('Rudisha paneli (Cmd/Ctrl + \\)'));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(canvas).width, full);
+  });
+
   testWidgets('Run: kushuka chini na kufuata link', (tester) async {
     tester.view.physicalSize = const Size(1200, 1000);
     tester.view.devicePixelRatio = 1;
