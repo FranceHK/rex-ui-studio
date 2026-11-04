@@ -46,7 +46,7 @@ void main() {
     await tester.tap(find.text('Kitufe'));
     await tester.pumpAndSettle();
     expect(find.text('Endelea'), findsWidgets);
-    expect(find.text('Mpangilio'), findsOneWidget);
+    expect(find.text('Layout'), findsOneWidget);
 
     // Kurudi kwenye ukurasa wa mwanzo kunaonyesha mradi uliohifadhiwa
     await tester.pump(const Duration(seconds: 1));

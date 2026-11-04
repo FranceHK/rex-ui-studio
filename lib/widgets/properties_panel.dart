@@ -23,7 +23,7 @@ const swatches = [
   Colors.transparent,
 ];
 
-/// Paneli ya kulia: sifa za kipengele kilichochaguliwa au za skrini.
+/// The right panel: properties of the selected element or the screen.
 class PropertiesPanel extends StatelessWidget {
   const PropertiesPanel({super.key, required this.controller});
 
@@ -43,7 +43,7 @@ class PropertiesPanel extends StatelessWidget {
     );
   }
 
-  /// Vipengele vingi vimechaguliwa (Shift + bonyeza au marquee).
+  /// Several elements are selected (Shift + tap or marquee).
   List<Widget> _multiProps(BuildContext context) {
     final c = controller;
     final els = c.selectedElements;
@@ -51,9 +51,9 @@ class PropertiesPanel extends StatelessWidget {
     return [
       Row(
         children: [
-          Expanded(child: _Heading('Vipengele ${els.length}')),
+          Expanded(child: _Heading('${els.length} elements')),
           IconButton(
-            tooltip: allLocked ? 'Fungua vyote' : 'Funga vyote',
+            tooltip: allLocked ? 'Unlock all' : 'Lock all',
             icon: Icon(allLocked ? AppIcons.lock : AppIcons.unlock, size: 18),
             onPressed: () {
               c.checkpoint();
@@ -63,19 +63,19 @@ class PropertiesPanel extends StatelessWidget {
             },
           ),
           IconButton(
-            tooltip: 'Nakili vyote (Cmd+D)',
+            tooltip: 'Duplicate all (Cmd+D)',
             icon: const Icon(AppIcons.copy, size: 18),
             onPressed: c.duplicateSelected,
           ),
           IconButton(
-            tooltip: 'Futa vyote',
+            tooltip: 'Delete all',
             icon: const Icon(AppIcons.trash, size: 18),
             onPressed: c.deleteSelected,
           ),
         ],
       ),
       Text(
-        'Shift + bonyeza kuongeza/kuondoa · Alt kuona umbali',
+        'Shift + tap to add/remove · Alt to see distances',
         style: TextStyle(
           fontSize: 12,
           color: Theme.of(context).colorScheme.outline,
@@ -89,16 +89,16 @@ class PropertiesPanel extends StatelessWidget {
     final c = controller;
     final page = c.page;
     return [
-      const _Heading('Skrini'),
+      const _Heading('Screen'),
       PropField(
         key: ValueKey('${page.id}-name'),
-        label: 'Jina',
+        label: 'Name',
         value: page.name,
         onFocus: c.checkpoint,
         onChanged: (v) => c.updatePage(page.copyWith(name: v), record: false),
       ),
       const SizedBox(height: 16),
-      const _Label('Kifaa'),
+      const _Label('Device'),
       Row(
         children: [
           Icon(page.device.icon, size: 18),
@@ -107,7 +107,7 @@ class PropertiesPanel extends StatelessWidget {
             child: Text(
               '${page.device.name} · ${page.size.width.round()}×'
               '${page.size.height.round()}'
-              '${page.landscape ? ' (mlalo)' : ''}',
+              '${page.landscape ? ' (landscape)' : ''}',
             ),
           ),
         ],
@@ -117,9 +117,9 @@ class PropertiesPanel extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4),
           child: Text(
             '${d.diagonal == null ? '' : '${d.diagonal}" · '}'
-            '${d.physical.width.round()}×${d.physical.height.round()} px halisi'
+            '${d.physical.width.round()}×${d.physical.height.round()} px physical'
             '${d.scale == null ? '' : ' · scale ${d.scale}'}'
-            '${d.logicalVerified ? '' : ' · dp makisio'}',
+            '${d.logicalVerified ? '' : ' · dp estimated'}',
             style: TextStyle(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -128,14 +128,14 @@ class PropertiesPanel extends StatelessWidget {
         ),
       const SizedBox(height: 4),
       Text(
-        'Badilisha kifaa kwenye tab ya "Vifaa" upande wa kushoto.',
+        'Change the device in the "Devices" tab on the left.',
         style: TextStyle(
           fontSize: 12,
           color: Theme.of(context).colorScheme.outline,
         ),
       ),
       const SizedBox(height: 16),
-      const _Label('Rangi ya nyuma'),
+      const _Label('Background color'),
       ColorSwatches(
         value: page.background,
         onChanged: (col) => c.updatePage(page.copyWith(background: col)),
@@ -144,7 +144,7 @@ class PropertiesPanel extends StatelessWidget {
       GuidesSection(controller: c),
       const SizedBox(height: 24),
       Text(
-        'Chagua kipengele kwenye skrini ili kubadilisha sifa zake.',
+        'Select an element on the screen to edit its properties.',
         style: TextStyle(color: Theme.of(context).colorScheme.outline),
       ),
     ];
@@ -179,18 +179,18 @@ class PropertiesPanel extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(child: _Heading(e.type.label)),
           IconButton(
-            tooltip: e.locked ? 'Fungua (unlock)' : 'Funga (lock)',
+            tooltip: e.locked ? 'Unlock' : 'Lock',
             isSelected: e.locked,
             icon: Icon(e.locked ? AppIcons.lock : AppIcons.unlock, size: 18),
             onPressed: () => c.toggleLock(e.id),
           ),
           IconButton(
-            tooltip: 'Nakili',
+            tooltip: 'Duplicate',
             icon: const Icon(AppIcons.copy, size: 18),
             onPressed: c.duplicateSelected,
           ),
           IconButton(
-            tooltip: 'Futa',
+            tooltip: 'Delete',
             icon: const Icon(AppIcons.trash, size: 18),
             onPressed: c.deleteSelected,
           ),
@@ -201,12 +201,12 @@ class PropertiesPanel extends StatelessWidget {
           TextButton.icon(
             onPressed: c.bringToFront,
             icon: const Icon(AppIcons.front, size: 18),
-            label: const Text('Mbele'),
+            label: const Text('Bring forward'),
           ),
           TextButton.icon(
             onPressed: c.sendToBack,
             icon: const Icon(AppIcons.backward, size: 18),
-            label: const Text('Nyuma'),
+            label: const Text('Send backward'),
           ),
         ],
       ),
@@ -223,14 +223,12 @@ class PropertiesPanel extends StatelessWidget {
             children: [
               Icon(AppIcons.lock, size: 16),
               SizedBox(width: 8),
-              Expanded(
-                child: Text('Kimefungwa: hakisogei wala kubadilika ukubwa.'),
-              ),
+              Expanded(child: Text('Locked: it can\'t be moved or resized.')),
             ],
           ),
         ),
       const SizedBox(height: 8),
-      const _Label('Mpangilio'),
+      const _Label('Layout'),
       Row(
         children: [
           num('X', r.left, (v) => Rect.fromLTWH(v, r.top, r.width, r.height)),
@@ -242,13 +240,13 @@ class PropertiesPanel extends StatelessWidget {
       Row(
         children: [
           num(
-            'Upana',
+            'Width',
             r.width,
             (v) => Rect.fromLTWH(r.left, r.top, v.clamp(4, 5000), r.height),
           ),
           const SizedBox(width: 8),
           num(
-            'Urefu',
+            'Height',
             r.height,
             (v) => Rect.fromLTWH(r.left, r.top, r.width, v.clamp(1, 5000)),
           ),
@@ -258,7 +256,7 @@ class PropertiesPanel extends StatelessWidget {
         const SizedBox(height: 16),
         PropField(
           key: ValueKey('${e.id}-text'),
-          label: 'Maandishi',
+          label: 'Text',
           value: e.text,
           onFocus: c.checkpoint,
           onChanged: (v) => update(e.copyWith(text: v), record: false),
@@ -303,7 +301,7 @@ class PropertiesPanel extends StatelessWidget {
           key: ValueKey('${e.id}-${e.iconStyle.name}'),
           initialValue: e.iconStyle,
           isDense: true,
-          decoration: const InputDecoration(labelText: 'Mtindo', isDense: true),
+          decoration: const InputDecoration(labelText: 'Style', isDense: true),
           items: [
             for (final s in IconStyle.values)
               DropdownMenuItem(value: s, child: Text(s.label)),
@@ -314,8 +312,8 @@ class PropertiesPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              'Icon "${e.text}" haipo kwenye mtindo wa ${e.iconStyle.label}; '
-              'chagua nyingine.',
+              'Icon "${e.text}" isn\'t in the ${e.iconStyle.label} style; '
+              'pick another.',
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.error,
@@ -326,13 +324,13 @@ class PropertiesPanel extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: () => _pickIcon(context, e),
           icon: const Icon(AppIcons.search, size: 18),
-          label: const Text('Badilisha icon'),
+          label: const Text('Change icon'),
         ),
       ],
       if (e.type != ElementType.text &&
           !(e.type == ElementType.iconItem && !e.iconStyle.colorable)) ...[
         const SizedBox(height: 16),
-        _Label(e.type == ElementType.input ? 'Rangi ya mpaka' : 'Rangi'),
+        _Label(e.type == ElementType.input ? 'Border color' : 'Color'),
         ColorSwatches(
           value: e.color,
           onChanged: (col) => update(e.copyWith(color: col)),
@@ -342,7 +340,7 @@ class PropertiesPanel extends StatelessWidget {
           e.type == ElementType.navBar ||
           e.type == ElementType.image) ...[
         const SizedBox(height: 16),
-        _Label(e.type.hasText ? 'Rangi ya maandishi' : 'Rangi ya aikoni'),
+        _Label(e.type.hasText ? 'Text color' : 'Icon color'),
         ColorSwatches(
           value: e.textColor,
           onChanged: (col) => update(e.copyWith(textColor: col)),
@@ -350,7 +348,7 @@ class PropertiesPanel extends StatelessWidget {
       ],
       if (e.type.hasText) ...[
         const SizedBox(height: 16),
-        _Label('Ukubwa wa herufi: ${e.fontSize.round()}'),
+        _Label('Font size: ${e.fontSize.round()}'),
         Slider(
           value: e.fontSize.clamp(8, 72),
           min: 8,
@@ -361,7 +359,7 @@ class PropertiesPanel extends StatelessWidget {
         ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Herufi nzito (bold)'),
+          title: const Text('Bold'),
           value: e.bold,
           onChanged: (v) => update(e.copyWith(bold: v)),
         ),
@@ -377,7 +375,7 @@ class PropertiesPanel extends StatelessWidget {
       ],
       if (e.type.hasRadius) ...[
         const SizedBox(height: 8),
-        _Label('Mviringo wa kona: ${e.radius.round()}'),
+        _Label('Corner radius: ${e.radius.round()}'),
         Slider(
           value: e.radius.clamp(0, 60),
           max: 60,
@@ -394,7 +392,7 @@ class PropertiesPanel extends StatelessWidget {
     final picked = await showDialog<(IconStyle, String)>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Chagua icon'),
+        title: const Text('Choose icon'),
         content: SizedBox(
           width: 560,
           height: 480,
@@ -407,7 +405,7 @@ class PropertiesPanel extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Ghairi'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -472,7 +470,7 @@ class ColorSwatches extends StatelessWidget {
       children: [
         for (final col in swatches)
           Tooltip(
-            message: col == Colors.transparent ? 'Bila rangi' : hexOf(col),
+            message: col == Colors.transparent ? 'No color' : hexOf(col),
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: () => onChanged(col),
@@ -503,8 +501,8 @@ class ColorSwatches extends StatelessWidget {
 String hexOf(Color c) =>
     '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
-/// Sehemu ya kuandika inayobaki sawa na thamani ya nje isipokuwa
-/// mtumiaji anapoandika ndani yake.
+/// A text field that follows the outside value except while the user
+/// is typing in it.
 class PropField extends StatefulWidget {
   const PropField({
     super.key,

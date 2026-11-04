@@ -397,7 +397,7 @@ void main() {
       kind: PointerDeviceKind.stylus,
     );
     await tester.pumpAndSettle();
-    final width = find.widgetWithText(TextField, 'Upana');
+    final width = find.widgetWithText(TextField, 'Width');
     expect(width, findsOneWidget);
     await tester.tap(width);
     await tester.pumpAndSettle();
@@ -405,13 +405,13 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.delete);
     await tester.pumpAndSettle();
     expect(
-      find.widgetWithText(TextField, 'Upana'),
+      find.widgetWithText(TextField, 'Width'),
       findsOneWidget,
       reason: 'kipengele bado kipo',
     );
 
     // Backspace ilibadilisha 160 → 16; rudisha upana ili kitufe kibonyezeke
-    await tester.enterText(find.widgetWithText(TextField, 'Upana'), '160');
+    await tester.enterText(find.widgetWithText(TextField, 'Width'), '160');
     await tester.pumpAndSettle();
 
     // Ukirudi kwenye canvas, Delete inafuta kipengele
@@ -425,7 +425,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.sendKeyEvent(LogicalKeyboardKey.delete);
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(TextField, 'Upana'), findsNothing);
+    expect(find.widgetWithText(TextField, 'Width'), findsNothing);
   });
 
   testWidgets('kuburuta kutoka ruler ya juu na ya kushoto kunaunda guides', (
@@ -499,7 +499,7 @@ void main() {
     // Kiganja/kidole kimoja: hakichagui wala kusogeza kitufe
     await tester.tap(button);
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(TextField, 'Upana'), findsNothing);
+    expect(find.widgetWithText(TextField, 'Width'), findsNothing);
     await tester.drag(button, const Offset(80, 60));
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(button), before);
@@ -507,7 +507,7 @@ void main() {
     // Kalamu inachagua
     await tester.tap(button, kind: PointerDeviceKind.stylus);
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(TextField, 'Upana'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Width'), findsOneWidget);
 
     String zoom() => tester
         .widgetList<Text>(find.textContaining(RegExp(r'^\d+%$')))
