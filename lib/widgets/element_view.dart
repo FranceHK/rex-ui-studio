@@ -6,7 +6,7 @@ import '../icons/app_icons.dart';
 import '../icons/icon_style.dart';
 import '../models/ui_element.dart';
 
-/// Inachora kipengele kimoja kama kinavyoonekana kwenye skrini.
+/// Draws a single element the way it looks on the screen.
 class ElementView extends StatelessWidget {
   const ElementView({super.key, required this.element});
 
@@ -22,7 +22,7 @@ class ElementView extends StatelessWidget {
       fontWeight: e.bold ? FontWeight.w600 : FontWeight.w400,
     );
 
-    // Mpangilio wa maandishi ndani ya kisanduku (text alignment)
+    // Text alignment inside the box
     final align = e.effectiveTextAlign;
     final inside = Alignment(switch (align) {
       TextAlign.center => 0,
