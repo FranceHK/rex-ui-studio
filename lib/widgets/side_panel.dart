@@ -23,9 +23,20 @@ enum SideTab {
 
 /// Navigation bar ya kushoto (rail) pamoja na paneli ya tab iliyochaguliwa.
 class SidePanel extends StatefulWidget {
-  const SidePanel({super.key, required this.controller});
+  const SidePanel({
+    super.key,
+    required this.controller,
+    this.expanded = true,
+    this.onToggle,
+  });
 
   final EditorController controller;
+
+  /// false = paneli imekunjwa: rail ya icons tu inaonekana.
+  final bool expanded;
+
+  /// Kunja/funua paneli (null = haikunjiki, k.m. ndani ya drawer).
+  final VoidCallback? onToggle;
 
   @override
   State<SidePanel> createState() => _SidePanelState();
@@ -38,13 +49,28 @@ class _SidePanelState extends State<SidePanel> {
   Widget build(BuildContext context) {
     final c = widget.controller;
     return Row(
+      // Ikikunjwa, upana ni wa rail tu
+      mainAxisSize: widget.expanded ? MainAxisSize.max : MainAxisSize.min,
       children: [
         NavigationRail(
-          selectedIndex: _tab.index,
           labelType: NavigationRailLabelType.all,
           minWidth: 76,
-          onDestinationSelected: (i) =>
-              setState(() => _tab = SideTab.values[i]),
+          backgroundColor: Colors.transparent,
+          leading: widget.onToggle == null
+              ? null
+              : IconButton(
+                  tooltip: widget.expanded
+                      ? 'Kunja paneli (Cmd/Ctrl + \\)'
+                      : 'Funua paneli',
+                  icon: const Icon(AppIcons.panelLeft),
+                  onPressed: widget.onToggle,
+                ),
+          onDestinationSelected: (i) {
+            setState(() => _tab = SideTab.values[i]);
+            // Ukibonyeza tab paneli ikiwa imekunjwa, inafunguka
+            if (!widget.expanded) widget.onToggle?.call();
+          },
+          selectedIndex: widget.expanded ? _tab.index : null,
           destinations: [
             for (final t in SideTab.values)
               NavigationRailDestination(
@@ -53,41 +79,43 @@ class _SidePanelState extends State<SidePanel> {
               ),
           ],
         ),
-        const VerticalDivider(width: 1),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
-                child: Text(
-                  _tab.label,
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+        if (widget.expanded) ...[
+          const VerticalDivider(width: 1),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+                  child: Text(
+                    _tab.label,
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: switch (_tab) {
-                  SideTab.components => _ComponentsTab(controller: c),
-                  SideTab.icons => Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: IconBrowser(
-                      draggable: true,
-                      onPick: (style, name) => c.addElement(
-                        ElementType.iconItem,
-                        text: name,
-                        iconStyle: style,
+                Expanded(
+                  child: switch (_tab) {
+                    SideTab.components => _ComponentsTab(controller: c),
+                    SideTab.icons => Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: IconBrowser(
+                        draggable: true,
+                        onPick: (style, name) => c.addElement(
+                          ElementType.iconItem,
+                          text: name,
+                          iconStyle: style,
+                        ),
                       ),
                     ),
-                  ),
-                  SideTab.devices => _DevicesTab(controller: c),
-                  SideTab.screens => _ScreensTab(controller: c),
-                  SideTab.layers => _LayersTab(controller: c),
-                },
-              ),
-            ],
+                    SideTab.devices => _DevicesTab(controller: c),
+                    SideTab.screens => _ScreensTab(controller: c),
+                    SideTab.layers => _LayersTab(controller: c),
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
