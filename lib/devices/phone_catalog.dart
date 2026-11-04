@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'device_preset.dart';
 
-// Vyanzo rasmi vilivyotumika (Novemba 2026).
+// Official sources used (November 2026).
 const _appleCompare = 'https://www.apple.com/iphone/compare/';
 const _apple18Pro = 'https://www.apple.com/iphone-18-pro/specs/';
 const _xcodeSim =
@@ -17,7 +17,7 @@ const _flip7Compare =
     'https://www.samsung.com/ie/smartphones/galaxy-z-flip7/compare/';
 const _s21fe = 'https://www.samsung.com/hk_en/news/product/meet-s21-fe-5g/';
 
-/// Ukubwa wa safe area wa iPhone (makisio; plist za Xcode hazina insets).
+/// iPhone safe area sizes (estimates; the Xcode plists have no insets).
 const _seSafe = EdgeInsets.only(top: 20);
 const _xSafe = EdgeInsets.only(top: 44, bottom: 34);
 const _xrSafe = EdgeInsets.only(top: 48, bottom: 34);
@@ -26,7 +26,7 @@ const _notchSafe = EdgeInsets.only(top: 47, bottom: 34);
 const _islandSafe = EdgeInsets.only(top: 59, bottom: 34);
 const _island2Safe = EdgeInsets.only(top: 62, bottom: 34);
 
-/// Mwongozo wa makisio kwa Android (status bar + gesture bar).
+/// An estimated guide for Android (status bar + gesture bar).
 const _androidSafe = EdgeInsets.only(top: 32, bottom: 24);
 
 const _oled = 'Super Retina XDR OLED';
@@ -75,15 +75,15 @@ DevicePreset _iphone(
   );
 }
 
-/// Android dp kutoka density RASMI ya profile ya Android SDK (si PPI).
+/// Android dp from the OFFICIAL density of the Android SDK profile (not PPI).
 Size _dp(Size px, int dpi) => Size(
   (px.width * 160 / dpi).floorToDouble(),
   (px.height * 160 / dpi).floorToDouble(),
 );
 
-/// Makisio ya dp kwa vifaa visivyo na profile rasmi: tunatumia density za
-/// marejeo za Android SDK (xhdpi 320 kwa 720px, 420dpi kwa 1080px,
-/// 560dpi kwa 1440px). Haya si maadili rasmi ya mtengenezaji.
+/// Estimated dp for devices without an official profile: uses the Android
+/// SDK reference densities (xhdpi 320 for 720px, 420dpi for 1080px,
+/// 560dpi for 1440px). These aren't official manufacturer values.
 int _referenceDpi(Size px) {
   final w = px.shortestSide;
   if (w <= 800) return 320;
@@ -119,7 +119,7 @@ DeviceDisplay _android({
     densityDpi: verifiedLogical ? dpi : null,
     logicalSource: verifiedLogical
         ? 'Android SDK device profile "$sdkProfile" ($dpi dpi)'
-        : 'Makisio: density ya marejeo $dpi dpi (haijathibitishwa)',
+        : 'Estimate: reference density $dpi dpi (not verified)',
     safeArea: _androidSafe,
     cutouts: cutouts,
     unverified: {
@@ -231,12 +231,12 @@ DevicePreset _pixel(
   );
 }
 
-/// Katalogi ya simu: Apple iPhone, Samsung Galaxy na Google Pixel.
+/// Phone catalog: Apple iPhone, Samsung Galaxy and Google Pixel.
 ///
-/// Kila skrini ni wima. Ukubwa wa kimantiki wa iPhone umechukuliwa kwenye
-/// profile za Xcode Simulator; wa Pixel kutoka kwa density za profile za
-/// Android SDK. Samsung haina profile rasmi, kwa hiyo dp zake ni makisio
-/// yanayoonyeshwa wazi kwenye UI.
+/// Every screen is in portrait. iPhone logical sizes come from the
+/// Xcode Simulator profiles; Pixel ones from the Android SDK profile
+/// densities. Samsung has no official profile, so its dp are estimates
+/// that are clearly marked in the UI.
 final List<DevicePreset> phoneCatalog = [
   // ================= APPLE =================
   _iphone(
@@ -278,9 +278,9 @@ final List<DevicePreset> phoneCatalog = [
     sourceUrl: _appleCompare,
     status: VerificationStatus.verified,
     notes: const [
-      'Skrini ya ndani: Simulator inachora 2007×2853 px (@3x) kisha '
-          'kushusha hadi 1878×2670 px halisi — kama iPhone mini.',
-      'Safe area za Duo bado hazijulikani.',
+      'Inner screen: the Simulator renders 2007×2853 px (@3x) and then '
+          'downsamples to 1878×2670 physical px — like the iPhone mini.',
+      'The Duo safe areas are not known yet.',
     ],
     displays: const [
       DeviceDisplay(
@@ -580,8 +580,8 @@ final List<DevicePreset> phoneCatalog = [
     safe: _miniSafe,
     refresh: '60 Hz',
     notes: const [
-      'Frame ya 375×812 pt huchorwa @3x (1125×2436) kisha kushushwa hadi '
-          '1080×2340 px halisi; si px ÷ 3.',
+      'The 375×812 pt frame is rendered @3x (1125×2436) and then '
+          'downsampled to 1080×2340 physical px; not px ÷ 3.',
     ],
   ),
   _iphone(
@@ -641,8 +641,8 @@ final List<DevicePreset> phoneCatalog = [
     safe: _miniSafe,
     refresh: '60 Hz',
     notes: const [
-      'Frame ya 375×812 pt huchorwa @3x (1125×2436) kisha kushushwa hadi '
-          '1080×2340 px halisi; si px ÷ 3.',
+      'The 375×812 pt frame is rendered @3x (1125×2436) and then '
+          'downsampled to 1080×2340 physical px; not px ÷ 3.',
     ],
   ),
   _iphone(
@@ -764,7 +764,7 @@ final List<DevicePreset> phoneCatalog = [
   ),
 
   // ================= SAMSUNG =================
-  // S26: imethibitishwa kwenye samsung.com (resolution na skrini).
+  // S26: verified on samsung.com (resolution and screen).
   _galaxy(
     'galaxy-s26',
     'Galaxy S26',
@@ -968,8 +968,8 @@ final List<DevicePreset> phoneCatalog = [
     source: _s21fe,
     status: VerificationStatus.partial,
     notes: const [
-      'Imesahihishwa: jedwali la awali lilisema 1080×2400; Samsung '
-          'inataja 2340×1080 (FHD+).',
+      'Corrected: the earlier table said 1080×2400; Samsung '
+          'states 2340×1080 (FHD+).',
     ],
   ),
   // S20
@@ -1141,8 +1141,8 @@ final List<DevicePreset> phoneCatalog = [
     source: _fold7vs6,
     status: VerificationStatus.partial,
     notes: const [
-      'Ukubwa wa cover unaonekana kama 6.3" na 6.5" kwenye kurasa tofauti '
-          'za Samsung; haujathibitishwa.',
+      'The cover size appears as 6.3" and 6.5" on different Samsung '
+          'pages; not verified.',
     ],
     inner: _android(
       role: DisplayRole.inner,
@@ -1216,9 +1216,9 @@ final List<DevicePreset> phoneCatalog = [
     source: _flip7Compare,
     status: VerificationStatus.partial,
     notes: const [
-      'Samsung inaandika cover kama "1048 x 948" (urefu × upana, kama '
-          'ilivyo kwa skrini kuu "2520 x 1080"). Ikiwa wima ni 948×1048 px.',
-      'FlexWindow ni edge-to-edge na kamera mbili kona ya chini kushoto.',
+      'Samsung lists the cover as "1048 x 948" (height × width, as it '
+          'does for the main screen "2520 x 1080"). In portrait it is 948×1048 px.',
+      'The FlexWindow is edge-to-edge with two cameras in the bottom-left corner.',
     ],
     inner: _android(
       role: DisplayRole.inner,
@@ -1244,7 +1244,7 @@ final List<DevicePreset> phoneCatalog = [
     'Galaxy Z Flip6',
     2024,
     notes: const [
-      'Cover ina umbo la "folder": kamera zinachukua kona ya chini.',
+      'The cover has a "folder" shape: the cameras take the bottom corner.',
     ],
     inner: _android(
       role: DisplayRole.inner,
@@ -1265,7 +1265,7 @@ final List<DevicePreset> phoneCatalog = [
     'Galaxy Z Flip5',
     2023,
     notes: const [
-      'Cover ina umbo la "folder": kamera zinachukua kona ya chini.',
+      'The cover has a "folder" shape: the cameras take the bottom corner.',
     ],
     inner: _android(
       role: DisplayRole.inner,
@@ -1316,7 +1316,7 @@ final List<DevicePreset> phoneCatalog = [
   ),
 
   // ================= GOOGLE =================
-  // Pixel 11: imethibitishwa kwenye ukurasa rasmi; haina profile ya SDK bado.
+  // Pixel 11: verified on the official page; no SDK profile yet.
   _pixel(
     'pixel-11',
     'Pixel 11',
@@ -1622,8 +1622,8 @@ final List<DevicePreset> phoneCatalog = [
   ),
 ];
 
-/// Pixel zinazokunjika: skrini ya ndani ina profile rasmi ya SDK. Skrini ya
-/// nje haina profile yake, kwa hiyo dp yake ni makisio kwa density ileile.
+/// Pixel foldables: the inner screen has an official SDK profile. The
+/// outer screen has none, so its dp is estimated with the same density.
 DevicePreset _pixelFold(
   String id,
   String family,
@@ -1643,8 +1643,8 @@ DevicePreset _pixelFold(
     sourceUrl: _pixelSpecs,
     status: VerificationStatus.partial,
     notes: [
-      'Skrini ya ndani: dp kutoka profile ya Android SDK "$sdk" ($dpi dpi). '
-          'Skrini ya nje: makisio kwa density hiyohiyo.',
+      'Inner screen: dp from the Android SDK profile "$sdk" ($dpi dpi). '
+          'Outer screen: estimated with the same density.',
     ],
     displays: [
       _android(
