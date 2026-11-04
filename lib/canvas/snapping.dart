@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:flutter/painting.dart' show Axis;
+import 'package:flutter/painting.dart' show Alignment, Axis;
 
 import 'geometry.dart';
 
@@ -133,22 +133,26 @@ class SnapResult {
   final List<SnapLine> lines;
 }
 
-/// Snap mstatili unaosogezwa ([resize] = true: kingo za kulia/chini tu).
-/// [tolerance] iko kwenye nafasi ya artboard (pixel za skrini ÷ scale).
+/// Snap mstatili unaosogezwa. Kubadilisha ukubwa: [handle] ni kishiko
+/// kinachoburutwa (k.m. [Alignment.centerLeft] = ukingo wa kushoto tu,
+/// [Alignment.bottomRight] = kona); [resize] = true ni sawa na
+/// bottomRight. [tolerance] iko kwenye nafasi ya artboard.
 SnapResult snapRect(
   Rect moving,
   SnapTargets t,
   double tolerance, {
   bool resize = false,
+  Alignment? handle,
 }) {
-  final (dx, lineX) = _snapAxis(moving, t, tolerance, Axis.vertical, resize);
-  final (dy, lineY) = _snapAxis(moving, t, tolerance, Axis.horizontal, resize);
-  final rect = resize
+  final h = handle ?? (resize ? Alignment.bottomRight : null);
+  final (dx, lineX) = _snapAxis(moving, t, tolerance, Axis.vertical, h?.x);
+  final (dy, lineY) = _snapAxis(moving, t, tolerance, Axis.horizontal, h?.y);
+  final rect = h != null
       ? Rect.fromLTRB(
-          moving.left,
-          moving.top,
-          moving.right + dx,
-          moving.bottom + dy,
+          moving.left + (h.x < 0 ? dx : 0),
+          moving.top + (h.y < 0 ? dy : 0),
+          moving.right + (h.x > 0 ? dx : 0),
+          moving.bottom + (h.y > 0 ? dy : 0),
         )
       : moving.shift(Offset(dx, dy));
   // Ondoa makosa madogo ya float (k.m. 119.99999) kwenye mhimili uliosnap
@@ -173,12 +177,16 @@ SnapResult snapRect(
   SnapTargets t,
   double tol,
   Axis lineAxis,
-  bool resize,
+  // Kubadilisha ukubwa: -1 = ukingo wa mwanzo (kushoto/juu), 1 = wa mwisho,
+  // 0 = mhimili huu haubadiliki. null = kusogeza kipengele chote.
+  double? side,
 ) {
   // lineAxis = vertical → tunasogeza X
   final isX = lineAxis == Axis.vertical;
+  final resize = side != null;
+  if (side == 0) return (0.0, null);
   final anchors = resize
-      ? [isX ? r.right : r.bottom]
+      ? [isX ? (side < 0 ? r.left : r.right) : (side < 0 ? r.top : r.bottom)]
       : isX
       ? [r.left, r.center.dx, r.right]
       : [r.top, r.center.dy, r.bottom];
