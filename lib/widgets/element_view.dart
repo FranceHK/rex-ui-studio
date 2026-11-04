@@ -57,7 +57,7 @@ class ElementView extends StatelessWidget {
         child: label(maxLines: 1),
       ),
       ElementType.image => Container(
-        decoration: BoxDecoration(color: e.color, borderRadius: radius),
+        decoration: ShapeDecoration(color: e.color, shape: e.shapeBorder),
         child: Center(
           child: Icon(
             AppIcons.image,
@@ -67,7 +67,7 @@ class ElementView extends StatelessWidget {
         ),
       ),
       ElementType.container => DecoratedBox(
-        decoration: BoxDecoration(color: e.color, borderRadius: radius),
+        decoration: ShapeDecoration(color: e.color, shape: e.shapeBorder),
       ),
       ElementType.appBar => Container(
         color: e.color,
