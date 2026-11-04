@@ -21,7 +21,7 @@ void useDesktopView(WidgetTester tester) {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('kuanzisha mradi kunafungua editor, kisha kuongeza kitufe', (
+  testWidgets('starting a project opens the editor, then add a button', (
     tester,
   ) async {
     useDesktopView(tester);
@@ -29,18 +29,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No projects yet'), findsOneWidget);
 
-    // Bila jina, mradi haufunguliwi
+    // Without a name the project doesn't open
     await tester.ensureVisible(find.text('Start designing'));
     await tester.tap(find.text('Start designing'));
     await tester.pump();
     expect(find.text('Enter a project name first'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField).first, 'App ya Benki');
+    await tester.enterText(find.byType(TextField).first, 'Banking app');
     await tester.tap(find.text('Galaxy S25'));
     await tester.tap(find.text('Start designing'));
     await tester.pumpAndSettle();
 
-    expect(find.text('App ya Benki'), findsOneWidget);
+    expect(find.text('Banking app'), findsOneWidget);
     expect(find.textContaining('Galaxy S25 · 411×891'), findsWidgets);
 
     await tester.tap(find.text('Button'));
@@ -48,15 +48,15 @@ void main() {
     expect(find.text('Continue'), findsWidgets);
     expect(find.text('Layout'), findsOneWidget);
 
-    // Kurudi kwenye ukurasa wa mwanzo kunaonyesha mradi uliohifadhiwa
+    // Going back to the start page shows the saved project
     await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.byTooltip('All projects'));
     await tester.pumpAndSettle();
-    expect(find.text('App ya Benki'), findsOneWidget);
+    expect(find.text('Banking app'), findsOneWidget);
     expect(find.textContaining('1 screen · Galaxy S25'), findsOneWidget);
   });
 
-  testWidgets('kutafuta icon na kuiweka kwenye skrini', (tester) async {
+  testWidgets('search for an icon and put it on the screen', (tester) async {
     useDesktopView(tester);
     final storage = ProjectStorage();
     final info = await storage.create('Icons', EditorController().toJson());
@@ -91,7 +91,7 @@ void main() {
     expect(find.text('Bulk'), findsWidgets);
   });
 
-  test('kila icon kwenye katalogi ipo, na utafutaji unafanya kazi', () {
+  test('every catalog icon exists and search works', () {
     for (final s in IconStyle.values) {
       expect(s.names, isNotEmpty, reason: s.label);
     }
@@ -101,7 +101,7 @@ void main() {
     expect(iconMatches('arrowLeft', 'wallet'), isFalse);
   });
 
-  test('vifaa vina id za kipekee na ukubwa halali', () {
+  test('devices have unique ids and valid sizes', () {
     final ids = devices.map((d) => d.id).toSet();
     expect(ids, hasLength(devices.length));
     for (final b in [
@@ -118,7 +118,7 @@ void main() {
     expect(deviceById('watch-ultra-3').kind, DeviceKind.watch);
   });
 
-  test('lock inazuia kusogeza; mlalo unageuza ukubwa', () {
+  test('lock prevents moving; landscape flips the size', () {
     final c = EditorController();
     c.addElement(ElementType.button);
     final id = c.selectedId!;
@@ -141,7 +141,7 @@ void main() {
     expect(nav.bottom, portrait.width);
   });
 
-  test('ukubwa maalum', () {
+  test('custom size', () {
     final c = EditorController(device: deviceById(customDeviceId));
     c.setCustomSize(const Size(500, 700));
     expect(c.page.size, const Size(500, 700));
@@ -150,7 +150,7 @@ void main() {
     expect(restored.page.size, const Size(500, 700));
   });
 
-  test('export inaimport mitindo ya icons inayotumika tu', () {
+  test('export imports only the icon styles in use', () {
     final c = EditorController();
     c.addElement(ElementType.button);
     c.addElement(
@@ -163,9 +163,9 @@ void main() {
       text: 'visa',
       iconStyle: IconStyle.payment,
     );
-    c.updatePage(c.page.copyWith(name: 'login ya mteja'));
+    c.updatePage(c.page.copyWith(name: 'customer login'));
     final code = exportFlutter(c.page);
-    expect(code, contains('class LoginYaMtejaScreen extends StatelessWidget'));
+    expect(code, contains('class CustomerLoginScreen extends StatelessWidget'));
     expect(code, contains("import 'package:amazing_icons/bulk.dart';"));
     expect(code, contains("import 'package:amazing_icons/payment.dart';"));
     expect(code, isNot(contains("amazing_icons/outlined.dart")));
@@ -173,24 +173,24 @@ void main() {
     expect(code, contains('AmazingIconPayment.visa(size: 40)'));
   });
 
-  test('miradi mingi: kuhifadhi, kubadili jina, kufuta', () async {
+  test('many projects: save, rename, delete', () async {
     final storage = ProjectStorage();
     final a = EditorController()..addElement(ElementType.button);
-    a.updateElement(a.selected!.copyWith(text: 'Ingia', locked: true));
-    final p1 = await storage.create('Kwanza', a.toJson());
-    final p2 = await storage.create('Pili', EditorController().toJson());
+    a.updateElement(a.selected!.copyWith(text: 'Sign in', locked: true));
+    final p1 = await storage.create('First', a.toJson());
+    final p2 = await storage.create('Second', EditorController().toJson());
 
-    await storage.rename(p1.id, 'Mradi wa kwanza');
+    await storage.rename(p1.id, 'First project');
     final b = EditorController()..loadJson((await storage.load(p1.id))!);
-    expect(b.page.elements.single.text, 'Ingia');
+    expect(b.page.elements.single.text, 'Sign in');
     expect(b.page.elements.single.locked, isTrue);
 
     await storage.delete(p2.id);
     final list = await storage.list();
-    expect(list.map((p) => p.name), ['Mradi wa kwanza']);
+    expect(list.map((p) => p.name), ['First project']);
   });
 
-  test('mradi wa toleo la zamani unahamishwa', () async {
+  test('a project from the old version is migrated', () async {
     final old = EditorController()..addElement(ElementType.text);
     SharedPreferences.setMockInitialValues({
       'rexa_ui_studio.project.v1': jsonEncode(old.toJson()),
@@ -199,7 +199,7 @@ void main() {
     expect(list.single.name, 'My project');
   });
 
-  test('JSON mbovu haiharibu mradi wa sasa', () {
+  test('bad JSON does not break the current project', () {
     final c = EditorController()..addElement(ElementType.button);
     expect(() => c.loadJson({'pages': 'si orodha'}), throwsFormatException);
     expect(() => c.loadJson({'pages': []}), throwsFormatException);
