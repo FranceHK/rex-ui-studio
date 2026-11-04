@@ -1,0 +1,142 @@
+import 'dart:math';
+
+import 'package:flutter/painting.dart';
+
+import '../icons/app_icons.dart';
+import '../icons/icon_style.dart';
+import '../models/ui_element.dart';
+
+/// Inageuza skrini kuwa Flutter code (StatelessWidget yenye Stack).
+String exportFlutter(DesignPage page) {
+  final name = className(page.name);
+  final size = page.size;
+
+  // Import mitindo ya amazing_icons inayotumika tu
+  final styles = <IconStyle>{
+    for (final e in page.elements)
+      if (e.type == ElementType.iconItem)
+        e.iconStyle
+      else if (e.type == ElementType.appBar || e.type == ElementType.navBar)
+        IconStyle.broken,
+  }.toList()..sort((a, b) => a.name.compareTo(b.name));
+
+  final b = StringBuffer()..writeln("import 'package:flutter/material.dart';");
+  for (final s in styles) {
+    b.writeln("import '${s.importPath}';");
+  }
+  b
+    ..writeln()
+    ..writeln(
+      '/// ${page.device.name} (${_n(size.width)}×${_n(size.height)})'
+      ' — imetengenezwa na Rexa UI Studio',
+    )
+    ..writeln('class $name extends StatelessWidget {')
+    ..writeln('  const $name({super.key});')
+    ..writeln()
+    ..writeln('  @override')
+    ..writeln('  Widget build(BuildContext context) {')
+    ..writeln('    return Scaffold(')
+    ..writeln('      backgroundColor: ${_c(page.background)},')
+    ..writeln('      body: SizedBox(')
+    ..writeln('        width: ${_n(size.width)},')
+    ..writeln('        height: ${_n(size.height)},')
+    ..writeln('        child: Stack(')
+    ..writeln('          children: [');
+
+  for (final e in page.elements) {
+    final r = e.rect;
+    b
+      ..writeln('            Positioned(')
+      ..writeln('              left: ${_n(r.left)},')
+      ..writeln('              top: ${_n(r.top)},')
+      ..writeln('              width: ${_n(r.width)},')
+      ..writeln('              height: ${_n(r.height)},')
+      ..writeln('              child: ${_widget(e)},')
+      ..writeln('            ),');
+  }
+
+  b
+    ..writeln('          ],')
+    ..writeln('        ),')
+    ..writeln('      ),')
+    ..writeln('    );')
+    ..writeln('  }')
+    ..writeln('}');
+  return b.toString();
+}
+
+/// "Skrini ya login" → "SkriniYaLoginScreen".
+String className(String name) {
+  final words = name
+      .split(RegExp(r'[^A-Za-z0-9]+'))
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1));
+  var result = words.join();
+  if (result.isEmpty || RegExp(r'^[0-9]').hasMatch(result)) {
+    result = 'Design$result';
+  }
+  return result.endsWith('Screen') ? result : '${result}Screen';
+}
+
+String _widget(UiElement e) {
+  final radius = 'BorderRadius.circular(${_n(e.radius)})';
+  final style =
+      'TextStyle(color: ${_c(e.textColor)}, '
+      'fontSize: ${_n(e.fontSize)}, '
+      'fontWeight: FontWeight.${e.bold ? 'w600' : 'w400'})';
+  final text = _s(e.text);
+
+  return switch (e.type) {
+    ElementType.text =>
+      "Align(alignment: Alignment.centerLeft, "
+          "child: Text('$text', style: $style))",
+    ElementType.button =>
+      "FilledButton(onPressed: () {}, "
+          "style: FilledButton.styleFrom(backgroundColor: ${_c(e.color)}, "
+          "shape: RoundedRectangleBorder(borderRadius: $radius)), "
+          "child: Text('$text', style: $style))",
+    ElementType.input =>
+      "TextField(decoration: InputDecoration("
+          "hintText: '$text', hintStyle: $style, "
+          "enabledBorder: OutlineInputBorder(borderRadius: $radius, "
+          "borderSide: BorderSide(color: ${_c(e.color)}))))",
+    ElementType.image =>
+      "Container(decoration: BoxDecoration("
+          "color: ${_c(e.color)}, borderRadius: $radius), "
+          "child: Icon(Icons.image_outlined, color: ${_c(e.textColor)}))",
+    ElementType.container =>
+      "DecoratedBox(decoration: BoxDecoration("
+          "color: ${_c(e.color)}, borderRadius: $radius))",
+    ElementType.appBar =>
+      "Container(color: ${_c(e.color)}, "
+          "padding: const EdgeInsets.symmetric(horizontal: 16), "
+          "child: Row(children: [Icon(AmazingIconBroken.menu, color: ${_c(e.textColor)}), "
+          "const SizedBox(width: 16), Text('$text', style: $style)]))",
+    ElementType.navBar =>
+      "Container(color: ${_c(e.color)}, "
+          "child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, "
+          "children: [${[for (final (i, icon) in navBarIconNames.indexed) IconStyle.broken.code(icon, size: '24', color: i == 0 ? _c(e.textColor) : 'const Color(0xFF98A2B3)')].join(', ')}]))",
+    ElementType.iconItem =>
+      "FittedBox(child: ${e.iconStyle.code(e.text, size: _n(min(e.rect.width, e.rect.height)), color: _c(e.color))})",
+    ElementType.avatar =>
+      "CircleAvatar(backgroundColor: ${_c(e.color)}, "
+          "child: Text('$text', style: $style))",
+    ElementType.toggle =>
+      "FittedBox(child: Switch(value: true, "
+          "activeTrackColor: ${_c(e.color)}, onChanged: (_) {}))",
+    ElementType.divider =>
+      "Center(child: Divider(height: 1, thickness: 1, color: ${_c(e.color)}))",
+  };
+}
+
+String _n(double v) =>
+    v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+
+String _c(Color c) =>
+    'const Color(0x${c.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()})';
+
+String _s(String v) => v
+    .replaceAll(r'\', r'\\')
+    .replaceAll("'", r"\'")
+    .replaceAll(r'$', r'\$')
+    .replaceAll('\n', r'\n');

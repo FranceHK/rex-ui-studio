@@ -1,0 +1,44 @@
+"""Inatengeneza lib/icons/icon_catalog.dart kutoka package ya amazing_icons.
+
+Endesha upya baada ya kusasisha amazing_icons:
+    python3 tool/gen_icon_catalog.py
+"""
+import json
+import pathlib
+import re
+
+root = pathlib.Path(__file__).resolve().parent.parent
+config = json.loads((root / '.dart_tool/package_config.json').read_text())
+pkg = next(p for p in config['packages'] if p['name'] == 'amazing_icons')
+src = pathlib.Path(pkg['rootUri'].removeprefix('file://')) / 'lib/src'
+
+def names(style, pattern):
+    text = (src / f'amazing_icon_{style}.dart').read_text()
+    return sorted(set(re.findall(pattern, text)))
+
+font = r'static const IconData (\w+) ='
+widget = r'static Widget (\w+)\('
+
+out = [
+    '// GENERATED na tool/gen_icon_catalog.py – usihariri kwa mkono.',
+    '// ignore_for_file: lines_longer_than_80_chars',
+    "import 'package:amazing_icons/amazing_icons.dart';",
+    "import 'package:flutter/widgets.dart';",
+    '',
+    'typedef DuoIconBuilder = Widget Function({double size, Color color, double opacity});',
+    'typedef PaymentIconBuilder = Widget Function({double size});',
+    '',
+]
+for style, cls in [('outlined', 'AmazingIconOutlined'), ('filled', 'AmazingIconFilled'), ('broken', 'AmazingIconBroken')]:
+    out.append(f'const {style}Icons = <String, IconData>{{')
+    out += [f"  '{n}': {cls}.{n}," for n in names(style, font)]
+    out += ['};', '']
+for style, cls in [('bulk', 'AmazingIconBulk'), ('twotone', 'AmazingIconTwotone')]:
+    out.append(f'const {style}Icons = <String, DuoIconBuilder>{{')
+    out += [f"  '{n}': {cls}.{n}," for n in names(style, widget) if n != '_build']
+    out += ['};', '']
+out.append('const paymentIcons = <String, PaymentIconBuilder>{')
+out += [f"  '{n}': AmazingIconPayment.{n}," for n in names('payment', widget)]
+out += ['};']
+(root / 'lib/icons/icon_catalog.dart').write_text('\n'.join(out) + '\n')
+print('ok')
