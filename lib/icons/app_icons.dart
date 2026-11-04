@@ -83,6 +83,7 @@ abstract final class AppIcons {
   static const ruler = AmazingIconBroken.ruler;
   static const grid = AmazingIconBroken.grid8;
   static const view = AmazingIconBroken.eye;
+  static const hidden = AmazingIconBroken.eyeSlash;
   static const play = AmazingIconBroken.playCircle;
   static const swap = AmazingIconBroken.convertshape;
   static const textLeft = AmazingIconBroken.textalignLeft;
