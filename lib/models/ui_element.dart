@@ -40,6 +40,69 @@ enum ElementType {
 
   bool get hasRadius =>
       this == button || this == input || this == image || this == container;
+
+  /// Vipengele vinavyoweza kuwa na umbo tofauti (duara, nyota, …).
+  bool get hasShape => this == container || this == image;
+}
+
+/// Umbo la kisanduku au picha. Kona ([UiElement.radius]) zinatumika kwa
+/// mstatili, na kulainisha ncha za poligoni na nyota.
+enum ElementShape {
+  rectangle('Rectangle'),
+  ellipse('Ellipse'),
+  triangle('Triangle'),
+  diamond('Diamond'),
+  pentagon('Pentagon'),
+  hexagon('Hexagon'),
+  star('Star');
+
+  const ElementShape(this.label);
+  final String label;
+
+  /// Kiasi cha kulainisha ncha (0–1) kutoka radius na ukubwa.
+  static double _rounding(double radius, Size size) {
+    final half = size.shortestSide / 2;
+    return half <= 0 ? 0 : (radius / half).clamp(0.0, 1.0);
+  }
+
+  /// [ShapeBorder] inayojaza mstatili wote wa kipengele.
+  ShapeBorder border(double radius, Size size) {
+    final r = _rounding(radius, size);
+    return switch (this) {
+      rectangle => RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      ellipse => const OvalBorder(),
+      triangle => StarBorder.polygon(sides: 3, squash: 1, pointRounding: r),
+      diamond => StarBorder.polygon(sides: 4, squash: 1, pointRounding: r),
+      pentagon => StarBorder.polygon(sides: 5, squash: 1, pointRounding: r),
+      hexagon => StarBorder.polygon(sides: 6, squash: 1, pointRounding: r),
+      star => StarBorder(
+        points: 5,
+        innerRadiusRatio: 0.45,
+        squash: 1,
+        pointRounding: r,
+      ),
+    };
+  }
+
+  /// Dart code ya [border] (kwa "Toa code").
+  String code(double radius, Size size) {
+    String n(double v) =>
+        v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+    final r = n(_rounding(radius, size));
+    return switch (this) {
+      rectangle =>
+        'RoundedRectangleBorder(borderRadius: BorderRadius.circular(${n(radius)}))',
+      ellipse => 'const OvalBorder()',
+      triangle => 'StarBorder.polygon(sides: 3, squash: 1, pointRounding: $r)',
+      diamond => 'StarBorder.polygon(sides: 4, squash: 1, pointRounding: $r)',
+      pentagon => 'StarBorder.polygon(sides: 5, squash: 1, pointRounding: $r)',
+      hexagon => 'StarBorder.polygon(sides: 6, squash: 1, pointRounding: $r)',
+      star =>
+        'StarBorder(points: 5, innerRadiusRatio: 0.45, squash: 1, pointRounding: $r)',
+    };
+  }
 }
 
 /// Mpangilio wima wa maandishi ndani ya kisanduku chake.
@@ -54,11 +117,12 @@ enum VAlign {
 
 /// Kipengele kipya kinachoburutwa au kubofywa kutoka paneli ya kushoto.
 class NewElement {
-  const NewElement(this.type, {this.text, this.iconStyle});
+  const NewElement(this.type, {this.text, this.iconStyle, this.shape});
 
   final ElementType type;
   final String? text;
   final IconStyle? iconStyle;
+  final ElementShape? shape;
 }
 
 class UiElement {
@@ -77,6 +141,7 @@ class UiElement {
     this.textAlign,
     this.vAlign = VAlign.middle,
     this.link,
+    this.shape = ElementShape.rectangle,
   });
 
   /// Kipengele kipya chenye mtindo wa kawaida kwa aina yake.
@@ -197,6 +262,11 @@ class UiElement {
   /// Prototype: kubonyeza kipengele kwenye "Run" kunaenda skrini hii (id).
   final String? link;
 
+  /// Umbo (kwa [ElementType.hasShape]).
+  final ElementShape shape;
+
+  ShapeBorder get shapeBorder => shape.border(radius, rect.size);
+
   TextAlign get effectiveTextAlign =>
       textAlign ??
       switch (type) {
@@ -219,6 +289,7 @@ class UiElement {
     VAlign? vAlign,
     String? link,
     bool clearLink = false,
+    ElementShape? shape,
   }) {
     return UiElement(
       id: id ?? this.id,
@@ -235,6 +306,7 @@ class UiElement {
       textAlign: textAlign ?? this.textAlign,
       vAlign: vAlign ?? this.vAlign,
       link: clearLink ? null : link ?? this.link,
+      shape: shape ?? this.shape,
     );
   }
 
@@ -253,6 +325,7 @@ class UiElement {
     'textAlign': ?textAlign?.name,
     if (vAlign != VAlign.middle) 'vAlign': vAlign.name,
     'link': ?link,
+    if (shape != ElementShape.rectangle) 'shape': shape.name,
   };
 
   factory UiElement.fromJson(Map<String, dynamic> json) {
@@ -278,6 +351,9 @@ class UiElement {
       textAlign: TextAlign.values.asNameMap()[json['textAlign']],
       vAlign: VAlign.values.asNameMap()[json['vAlign']] ?? VAlign.middle,
       link: json['link'] as String?,
+      shape:
+          ElementShape.values.asNameMap()[json['shape']] ??
+          ElementShape.rectangle,
     );
   }
 }
