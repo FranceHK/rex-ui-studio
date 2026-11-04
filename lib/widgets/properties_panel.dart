@@ -6,6 +6,7 @@ import '../models/ui_element.dart';
 import '../state/editor_controller.dart';
 import 'icon_browser.dart';
 import 'layout_panels.dart';
+import 'shape_picker.dart';
 
 const swatches = [
   brandColor,
@@ -363,6 +364,15 @@ class PropertiesPanel extends StatelessWidget {
           title: const Text('Herufi nzito (bold)'),
           value: e.bold,
           onChanged: (v) => update(e.copyWith(bold: v)),
+        ),
+      ],
+      if (e.type.hasShape) ...[
+        const SizedBox(height: 12),
+        const _Label('Shape'),
+        const SizedBox(height: 6),
+        ShapePicker(
+          value: e.shape,
+          onChanged: (shape) => update(e.copyWith(shape: shape)),
         ),
       ],
       if (e.type.hasRadius) ...[
