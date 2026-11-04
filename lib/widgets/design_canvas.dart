@@ -35,7 +35,7 @@ sealed class _Drag {}
 class _MoveDrag extends _Drag {
   _MoveDrag(this.start, this.pointer, this.targets);
   final Map<String, Rect> start;
-  final Offset pointer; // nafasi ya artboard
+  final Offset pointer; // artboard coordinates
   final SnapTargets targets;
   bool recorded = false;
 }
