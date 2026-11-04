@@ -7,6 +7,7 @@ import '../canvas/geometry.dart';
 import '../canvas/layout.dart';
 import '../icons/icon_style.dart';
 import '../models/device_frame.dart';
+import '../models/reference_image.dart';
 import '../models/ui_element.dart';
 
 typedef _Snapshot = (List<DesignPage>, int);
@@ -345,6 +346,13 @@ class EditorController extends ChangeNotifier {
 
   void setGrid(GridSettings grid, {bool record = true}) =>
       updatePage(page.copyWith(grid: grid), record: record);
+
+  /// Set or change the current screen's reference image (null removes it).
+  void setReference(ReferenceImage? reference, {bool record = true}) =>
+      updatePage(
+        page.copyWith(reference: reference, clearReference: reference == null),
+        record: record,
+      );
 
   void setRulerOrigin(Offset origin) =>
       updatePage(page.copyWith(rulerOrigin: origin));
