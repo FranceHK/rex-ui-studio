@@ -8,9 +8,9 @@ import '../canvas/snapping.dart';
 
 const rulerSize = 20.0;
 
-/// Ruler ya juu (horizontal) au ya kushoto (vertical). Namba ni kwenye
-/// nafasi ya design (pt/dp), zikianzia [origin] (world), na hatua
-/// inabadilika na zoom ([rulerStep]).
+/// The top (horizontal) or left (vertical) ruler. Numbers are in design
+/// units (pt/dp), starting at [origin] (world), and the step changes
+/// with zoom ([rulerStep]).
 class RulerPainter extends CustomPainter {
   RulerPainter({
     required this.view,
@@ -26,10 +26,10 @@ class RulerPainter extends CustomPainter {
   final bool horizontal;
   final ColorScheme colors;
 
-  /// Nafasi ya kielekezi (world) — alama ndogo kwenye ruler.
+  /// Pointer position (world) — a small mark on the ruler.
   final Offset? cursor;
 
-  /// Bendi ya uteuzi (world), kama Figma.
+  /// The selection band (world), like Figma.
   final Rect? highlight;
 
   @override
@@ -148,8 +148,8 @@ class RulerPainter extends CustomPainter {
       old.colors != colors;
 }
 
-/// Gridi ya miraba, safu na mistari ndani ya artboard (nafasi ya artboard;
-/// inachorwa ndani ya FittedBox kwa hiyo [pixelScale] ni pixel kwa unit).
+/// Square grid, columns and rows inside the artboard (artboard coordinates;
+/// drawn inside a FittedBox, so [pixelScale] is pixels per unit).
 class GridPainter extends CustomPainter {
   GridPainter(this.grid, this.pixelScale);
 
@@ -169,7 +169,7 @@ class GridPainter extends CustomPainter {
         canvas.drawRect(Rect.fromLTRB(0, a, size.width, b), band);
       }
     }
-    // Gridi ya miraba: ichore tu ikiwa mistari haijabanana sana (≥ 4 px)
+    // Square grid: only draw it when the lines aren't too dense (≥ 4 px)
     if (grid.show && grid.size * pixelScale >= 4) {
       final line = Paint()
         ..color = grid.color.withValues(alpha: min(1, grid.opacity * 2.5))
@@ -190,7 +190,7 @@ class GridPainter extends CustomPainter {
       old.grid != grid || old.pixelScale != pixelScale;
 }
 
-/// Mistari ya snapping, vipimo vya umbali na marquee (nafasi ya skrini).
+/// Snapping lines, distance measurements and the marquee (screen coordinates).
 class OverlayPainter extends CustomPainter {
   OverlayPainter({
     required this.view,
@@ -203,12 +203,12 @@ class OverlayPainter extends CustomPainter {
 
   final CanvasTransform view;
 
-  /// Kona ya juu-kushoto ya artboard ya sasa (world).
+  /// Top-left corner of the current artboard (world).
   final Offset artboardOrigin;
   final List<SnapLine> lines;
   final List<Measure> measures;
 
-  /// Mstatili wa kuchagua (nafasi ya artboard).
+  /// The selection rectangle (artboard coordinates).
   final Rect? marquee;
   final Color color;
 
@@ -258,7 +258,7 @@ String _n(double v) {
   return r == r.roundToDouble() ? r.toInt().toString() : r.toStringAsFixed(1);
 }
 
-/// Kibao kidogo cha namba (k.m. umbali "16").
+/// A small number badge (e.g. distance "16").
 void _pill(Canvas canvas, Offset center, String text, Color color) {
   final tp = TextPainter(
     text: TextSpan(
