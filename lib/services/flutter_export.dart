@@ -101,12 +101,12 @@ String _widget(UiElement e) {
           "enabledBorder: OutlineInputBorder(borderRadius: $radius, "
           "borderSide: BorderSide(color: ${_c(e.color)}))))",
     ElementType.image =>
-      "Container(decoration: BoxDecoration("
-          "color: ${_c(e.color)}, borderRadius: $radius), "
+      "Container(decoration: ShapeDecoration("
+          "color: ${_c(e.color)}, shape: ${e.shape.code(e.radius, e.rect.size)}), "
           "child: Icon(Icons.image_outlined, color: ${_c(e.textColor)}))",
     ElementType.container =>
-      "DecoratedBox(decoration: BoxDecoration("
-          "color: ${_c(e.color)}, borderRadius: $radius))",
+      "DecoratedBox(decoration: ShapeDecoration("
+          "color: ${_c(e.color)}, shape: ${e.shape.code(e.radius, e.rect.size)}))",
     ElementType.appBar =>
       "Container(color: ${_c(e.color)}, "
           "padding: const EdgeInsets.symmetric(horizontal: 16), "
