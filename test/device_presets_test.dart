@@ -166,7 +166,7 @@ void main() {
         landscape: true,
         safeArea: true,
       );
-      expect(page.name, 'Pixel 9 Pro Fold (ndani)');
+      expect(page.name, 'Pixel 9 Pro Fold (inner)');
       expect(page.device.id, 'pixel-9-pro-fold-inner');
       expect(page.size, const Size(882, 851));
       expect(page.showSafeArea, isTrue);
@@ -321,6 +321,6 @@ void main() {
     final page = result!('e9');
     expect(page.device.id, 'pixel-9-pro-fold-outer');
     expect(page.landscape, isTrue);
-    expect(page.name, 'Pixel 9 Pro Fold (nje)');
+    expect(page.name, 'Pixel 9 Pro Fold (outer)');
   });
 }
