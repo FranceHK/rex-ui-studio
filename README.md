@@ -5,9 +5,6 @@
 Design app screens for phones, tablets, computers and watches, then export
 ready-to-use Flutter code. Built with Flutter (web, Android, macOS).
 
-*Buni UI za simu, tablet, kompyuta na saa janja — kisha pata Flutter code
-papo hapo.*
-
 ## Features
 
 - **Device catalog** — 108 phone presets (Apple, Samsung, Google) with
