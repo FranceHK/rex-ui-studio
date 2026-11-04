@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Muhtasari wa mradi unaoonyeshwa kwenye ukurasa wa mwanzo.
+/// Project summary shown on the start page.
 class ProjectInfo {
   const ProjectInfo({
     required this.id,
@@ -50,9 +50,9 @@ class ProjectInfo {
   );
 }
 
-/// Inahifadhi miradi kwenye kifaa (browser: localStorage, macOS/Windows:
-/// faili la mipangilio ya app). Kila mradi una ufunguo wake, pamoja na
-/// orodha (index) ya miradi yote.
+/// Stores projects on the device (browser: localStorage, macOS/Windows:
+/// the app's preferences file). Each project has its own key, plus an
+/// index of all projects.
 class ProjectStorage {
   static const _indexKey = 'rexa_ui_studio.projects.v2';
   static const _projectPrefix = 'rexa_ui_studio.project.';
@@ -60,7 +60,7 @@ class ProjectStorage {
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
-  /// Miradi yote, ya karibuni kwanza.
+  /// All projects, most recent first.
   Future<List<ProjectInfo>> list() async {
     final prefs = await _prefs;
     await _migrateLegacy(prefs);
@@ -152,8 +152,8 @@ class ProjectStorage {
         jsonEncode([for (final p in list) p.toJson()]),
       );
 
-  /// Toleo la awali lilihifadhi mradi mmoja tu; uhamishe kuwa
-  /// "Mradi wangu" ili usipotee.
+  /// The first version stored a single project; migrate it to
+  /// "My project" so it isn't lost.
   Future<void> _migrateLegacy(SharedPreferences prefs) async {
     final raw = prefs.getString(_legacyKey);
     if (raw == null) return;
@@ -161,12 +161,12 @@ class ProjectStorage {
       final project = jsonDecode(raw) as Map<String, dynamic>;
       final info = ProjectInfo(
         id: 'legacy',
-        name: 'Mradi wangu',
+        name: 'My project',
         updatedAt: DateTime.now(),
       );
       await _write(prefs, info, project);
     } catch (_) {
-      // JSON iliyoharibika: hakuna cha kuhamisha
+      // Corrupt JSON: nothing to migrate
     }
     await prefs.remove(_legacyKey);
   }

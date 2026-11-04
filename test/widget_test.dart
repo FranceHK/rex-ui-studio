@@ -196,7 +196,7 @@ void main() {
       'rexa_ui_studio.project.v1': jsonEncode(old.toJson()),
     });
     final list = await ProjectStorage().list();
-    expect(list.single.name, 'Mradi wangu');
+    expect(list.single.name, 'My project');
   });
 
   test('JSON mbovu haiharibu mradi wa sasa', () {
