@@ -48,7 +48,7 @@ void main() {
     final html = CodeLanguage.html.generate(page);
     expect(html, startsWith('<!doctype html>'));
     expect(html, contains('clip-path: polygon('));
-    expect(html, contains('<input placeholder="Barua pepe"'));
+    expect(html, contains('<input placeholder="Email"'));
     final jsx = CodeLanguage.react.generate(page);
     expect(jsx, contains('export default function LoginScreen()'));
     expect(jsx, contains('className="material-symbols-rounded"'));

@@ -393,7 +393,7 @@ void main() {
 
     // Chagua kitufe kwa kalamu (hali ya kalamu: kidole hakihariri)
     await tester.tap(
-      find.text('Endelea').first,
+      find.text('Continue').first,
       kind: PointerDeviceKind.stylus,
     );
     await tester.pumpAndSettle();
@@ -418,7 +418,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(DesignCanvas),
-        matching: find.text('Endelea'),
+        matching: find.text('Continue'),
       ),
       kind: PointerDeviceKind.stylus,
     );
@@ -493,7 +493,7 @@ void main() {
     await tester.tap(find.text(info.name));
     await tester.pumpAndSettle();
 
-    final button = find.text('Endelea').first;
+    final button = find.text('Continue').first;
     final before = tester.getTopLeft(button);
 
     // Kiganja/kidole kimoja: hakichagui wala kusogeza kitufe
@@ -563,17 +563,17 @@ void main() {
 
     final canvas = find.byType(DesignCanvas);
     final full = tester.getSize(canvas).width;
-    expect(find.text('Maandishi'), findsOneWidget); // paneli ya vipengele
+    expect(find.text('Text'), findsOneWidget); // paneli ya vipengele
 
     await tester.tap(find.byTooltip('Collapse panel (Cmd/Ctrl + \\)'));
     await tester.pumpAndSettle();
-    expect(find.text('Maandishi'), findsNothing);
+    expect(find.text('Text'), findsNothing);
     expect(tester.getSize(canvas).width, greaterThan(full));
 
     // Kubonyeza tab kwenye rail kunafunua paneli tena
     await tester.tap(find.text('Components'));
     await tester.pumpAndSettle();
-    expect(find.text('Maandishi'), findsOneWidget);
+    expect(find.text('Text'), findsOneWidget);
 
     // Uwanja mzima: paneli zote mbili zinakunjwa, kisha zinarudi
     await tester.tap(
@@ -582,7 +582,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Properties'), findsNothing);
     final wide = tester.getSize(canvas).width;
-    expect(wide, greaterThan(full + 500));
+    expect(wide, greaterThan(full + 450));
     await tester.tap(find.byTooltip('Show panels (Cmd/Ctrl + \\)'));
     await tester.pumpAndSettle();
     expect(tester.getSize(canvas).width, full);

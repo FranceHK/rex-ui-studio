@@ -10,17 +10,17 @@ const inkColor = Color(0xFF101828);
 const mutedColor = Color(0xFF667085);
 
 enum ElementType {
-  text('Maandishi', AppIcons.text, Size(220, 32)),
-  button('Kitufe', AppIcons.button, Size(160, 48)),
-  input('Sehemu ya kuandika', AppIcons.input, Size(280, 52)),
-  image('Picha', AppIcons.image, Size(240, 160)),
-  container('Kisanduku', AppIcons.container, Size(200, 120)),
+  text('Text', AppIcons.text, Size(220, 32)),
+  button('Button', AppIcons.button, Size(160, 48)),
+  input('Text field', AppIcons.input, Size(280, 52)),
+  image('Image', AppIcons.image, Size(240, 160)),
+  container('Box', AppIcons.container, Size(200, 120)),
   appBar('App bar', AppIcons.appBar, Size(393, 64)),
   navBar('Bottom nav', AppIcons.navBar, Size(393, 72)),
   iconItem('Icon', AppIcons.star, Size(40, 40)),
   avatar('Avatar', AppIcons.avatar, Size(56, 56)),
-  toggle('Swichi', AppIcons.toggle, Size(52, 32)),
-  divider('Mstari', AppIcons.divider, Size(280, 12));
+  toggle('Switch', AppIcons.toggle, Size(52, 32)),
+  divider('Divider', AppIcons.divider, Size(280, 12));
 
   const ElementType(this.label, this.icon, this.defaultSize);
 
@@ -28,7 +28,7 @@ enum ElementType {
   final IconData icon;
   final Size defaultSize;
 
-  /// Vipengele vinavyochukua upana wote wa skrini.
+  /// Elements that span the full width of the screen.
   bool get fullWidth => this == appBar || this == navBar;
 
   bool get hasText =>
@@ -41,12 +41,12 @@ enum ElementType {
   bool get hasRadius =>
       this == button || this == input || this == image || this == container;
 
-  /// Vipengele vinavyoweza kuwa na umbo tofauti (duara, nyota, …).
+  /// Elements that can take a different shape (circle, star, …).
   bool get hasShape => this == container || this == image;
 }
 
-/// Umbo la kisanduku au picha. Kona ([UiElement.radius]) zinatumika kwa
-/// mstatili, na kulainisha ncha za poligoni na nyota.
+/// Shape of a box or image. The corner radius ([UiElement.radius]) rounds
+/// the rectangle's corners and softens polygon and star points.
 enum ElementShape {
   rectangle('Rectangle'),
   ellipse('Ellipse'),
@@ -59,13 +59,13 @@ enum ElementShape {
   const ElementShape(this.label);
   final String label;
 
-  /// Kiasi cha kulainisha ncha (0–1) kutoka radius na ukubwa.
+  /// How much to round the points (0–1), from the radius and size.
   static double _rounding(double radius, Size size) {
     final half = size.shortestSide / 2;
     return half <= 0 ? 0 : (radius / half).clamp(0.0, 1.0);
   }
 
-  /// [ShapeBorder] inayojaza mstatili wote wa kipengele.
+  /// A [ShapeBorder] that fills the element's whole rectangle.
   ShapeBorder border(double radius, Size size) {
     final r = _rounding(radius, size);
     return switch (this) {
@@ -86,7 +86,7 @@ enum ElementShape {
     };
   }
 
-  /// Dart code ya [border] (kwa "Toa code").
+  /// Dart code for [border] (for "Get code").
   String code(double radius, Size size) {
     String n(double v) =>
         v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
@@ -105,7 +105,7 @@ enum ElementShape {
   }
 }
 
-/// Mpangilio wima wa maandishi ndani ya kisanduku chake.
+/// Vertical text alignment inside its box.
 enum VAlign {
   top(-1),
   middle(0),
@@ -115,7 +115,7 @@ enum VAlign {
   final double y;
 }
 
-/// Kipengele kipya kinachoburutwa au kubofywa kutoka paneli ya kushoto.
+/// A new element dragged or tapped in from the left panel.
 class NewElement {
   const NewElement(this.type, {this.text, this.iconStyle, this.shape});
 
@@ -144,14 +144,14 @@ class UiElement {
     this.shape = ElementShape.rectangle,
   });
 
-  /// Kipengele kipya chenye mtindo wa kawaida kwa aina yake.
+  /// A new element with the default style for its type.
   factory UiElement.create(ElementType type, String id, Rect rect) {
     return switch (type) {
       ElementType.text => UiElement(
         id: id,
         type: type,
         rect: rect,
-        text: 'Kichwa cha habari',
+        text: 'Heading',
         fontSize: 22,
         bold: true,
       ),
@@ -159,7 +159,7 @@ class UiElement {
         id: id,
         type: type,
         rect: rect,
-        text: 'Endelea',
+        text: 'Continue',
         color: brandColor,
         textColor: Colors.white,
         radius: 12,
@@ -169,7 +169,7 @@ class UiElement {
         id: id,
         type: type,
         rect: rect,
-        text: 'Barua pepe',
+        text: 'Email',
         color: const Color(0xFFD0D5DD),
         textColor: mutedColor,
         fontSize: 15,
@@ -194,7 +194,7 @@ class UiElement {
         id: id,
         type: type,
         rect: rect,
-        text: 'Nyumbani',
+        text: 'Home',
         color: Colors.white,
         fontSize: 18,
         bold: true,
@@ -242,7 +242,7 @@ class UiElement {
   final ElementType type;
   final Rect rect;
 
-  /// Maandishi; kwa [ElementType.iconItem] ni jina la icon.
+  /// The text; for [ElementType.iconItem] it's the icon name.
   final String text;
   final Color color;
   final Color textColor;
@@ -250,19 +250,19 @@ class UiElement {
   final double radius;
   final bool bold;
 
-  /// Kipengele kilichofungwa hakisogei wala kubadilika ukubwa.
+  /// A locked element can't be moved or resized.
   final bool locked;
   final IconStyle iconStyle;
 
-  /// Mpangilio wa maandishi NDANI ya kisanduku (si kusogeza kipengele).
-  /// null = kawaida ya aina hii (k.m. kitufe → katikati).
+  /// Text alignment INSIDE the box (not moving the element).
+  /// null = the type's default (e.g. button → center).
   final TextAlign? textAlign;
   final VAlign vAlign;
 
-  /// Prototype: kubonyeza kipengele kwenye "Run" kunaenda skrini hii (id).
+  /// Prototype: tapping the element in "Run" goes to this screen (id).
   final String? link;
 
-  /// Umbo (kwa [ElementType.hasShape]).
+  /// Shape (for [ElementType.hasShape]).
   final ElementShape shape;
 
   ShapeBorder get shapeBorder => shape.border(radius, rect.size);
@@ -333,7 +333,7 @@ class UiElement {
     final type = switch (json['type']) {
       'icon' => ElementType.iconItem,
       final String name => ElementType.values.byName(name),
-      _ => throw const FormatException('Aina ya kipengele haijulikani'),
+      _ => throw const FormatException('Unknown element type'),
     };
     return UiElement(
       id: json['id'] as String,
@@ -358,7 +358,7 @@ class UiElement {
   }
 }
 
-/// Skrini moja ya muundo (k.m. "Login" kwenye iPhone).
+/// One design screen (e.g. "Login" on an iPhone).
 class DesignPage {
   const DesignPage({
     required this.id,
@@ -379,38 +379,38 @@ class DesignPage {
   final String name;
   final DeviceFrame device;
 
-  /// Kifaa kimelazwa (mlalo) badala ya kusimama (wima).
+  /// The device is in landscape instead of portrait.
   final bool landscape;
 
-  /// Ukubwa wa artboard uliobadilishwa na mtumiaji (ukiwa wima). Kwa
-  /// kifaa cha "Ukubwa maalum" ni ukubwa wake; kwa vifaa vingine ni
-  /// "responsive resize" — kifaa (na metadata yake) kinabaki.
+  /// Artboard size changed by the user (in portrait). For the
+  /// "Custom size" device it's its size; for other devices it's a
+  /// "responsive resize" — the device (and its metadata) stays.
   final Size? customSize;
 
-  /// Onyesha miongozo ya safe area kwenye canvas.
+  /// Show the safe area guides on the canvas.
   final bool showSafeArea;
   final Color background;
   final List<UiElement> elements;
 
-  /// Mahali pa artboard kwenye canvas (world). null = itapangwa yenyewe.
+  /// Position of the artboard on the canvas (world). null = laid out automatically.
   final Offset? position;
   final List<Guide> guides;
   final GridSettings grid;
 
-  /// Mwanzo (0,0) wa rulers ndani ya artboard; Offset.zero = kona ya
-  /// juu-kushoto.
+  /// Origin (0,0) of the rulers inside the artboard; Offset.zero = the
+  /// top-left corner.
   final Offset rulerOrigin;
 
-  /// Ukubwa wa artboard ukiwa wima.
+  /// Artboard size in portrait.
   Size get portraitSize => customSize ?? device.size;
 
-  /// Ukubwa halisi wa skrini kwa kuzingatia mlalo na ukubwa maalum.
+  /// The real screen size, taking landscape and custom size into account.
   Size get size => landscape ? portraitSize.flipped : portraitSize;
 
-  /// Artboard imebadilishwa kutoka ukubwa wa kifaa.
+  /// The artboard differs from the device size.
   bool get resized => customSize != null && customSize != device.size;
 
-  /// Safe area kwa mwelekeo wa sasa (null kama haijulikani).
+  /// Safe area for the current orientation (null if unknown).
   EdgeInsets? get safeArea {
     final s = device.display?.safeArea;
     if (s == null) return null;
@@ -447,7 +447,7 @@ class DesignPage {
     );
   }
 
-  /// Mstatili wa artboard kwenye canvas (world).
+  /// The artboard rectangle on the canvas (world).
   Rect get worldRect => (position ?? Offset.zero) & size;
 
   Map<String, dynamic> toJson() => {
@@ -459,7 +459,7 @@ class DesignPage {
     if (customSize case final s?) 'customSize': [s.width, s.height],
     if (showSafeArea) 'safeArea': true,
     'background': background.toARGB32(),
-    // Metadata ya kifaa (kwa kumbukumbu na export; haisomwi tena)
+    // Device metadata (for reference and export; never read back)
     if (device.display case final d?)
       'meta': {
         'physical': [d.physical.width, d.physical.height],
@@ -484,7 +484,7 @@ class DesignPage {
     var customSize = custom == null
         ? null
         : Size((custom[0] as num).toDouble(), (custom[1] as num).toDouble());
-    // Toleo la zamani: weka ukubwa wa zamani ili vipengele visisogee
+    // Old format: keep the old size so elements don't move
     if (json['v'] == null && customSize == null) {
       if (legacyDevices[deviceId] case (_, final old) when old != device.size) {
         customSize = old;
@@ -519,9 +519,9 @@ Offset? _offset(Object? v) => v is List
     ? Offset((v[0] as num).toDouble(), (v[1] as num).toDouble())
     : null;
 
-/// Safe area ya wima ikigeuzwa kuwa mlalo (simu imezungushwa kushoto):
-/// sehemu ya juu (notch / Dynamic Island) inakuwa upande, na home
-/// indicator inabaki chini.
+/// The portrait safe area turned to landscape (phone rotated left):
+/// the top part (notch / Dynamic Island) moves to the side, and the home
+/// indicator stays at the bottom.
 EdgeInsets rotateSafeArea(EdgeInsets s) {
   if (s.bottom == 0) return EdgeInsets.zero; // k.m. iPhone SE
   return EdgeInsets.only(left: s.top, right: s.top, bottom: 21);
