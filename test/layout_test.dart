@@ -18,6 +18,7 @@ import 'package:rexa_ui_studio/screens/run_screen.dart';
 import 'package:rexa_ui_studio/services/project_storage.dart';
 import 'package:rexa_ui_studio/state/editor_controller.dart';
 import 'package:rexa_ui_studio/widgets/design_canvas.dart';
+import 'package:rexa_ui_studio/widgets/element_view.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -545,6 +546,49 @@ void main() {
     await tester.pumpAndSettle();
     await pinch(80);
     expect(zoom(), z1);
+  });
+
+  testWidgets('pen hover shows handles; an edge grip resizes untapped', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final c = EditorController()..addElement(ElementType.container);
+    final info = await ProjectStorage().create('Hover', c.toJson());
+    await tester.pumpWidget(const RexaStudioApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(info.name));
+    await tester.pumpAndSettle();
+
+    final box = find.byType(ElementView).first;
+    final grips = find.byWidgetPredicate(
+      (w) => w.runtimeType.toString() == '_Grip',
+    );
+    expect(grips, findsNothing);
+
+    // The pen hovers just outside the right edge: handles appear
+    final rect = tester.getRect(box);
+    final pen = await tester.createGesture(kind: PointerDeviceKind.stylus);
+    await pen.addPointer(location: Offset.zero);
+    await pen.moveTo(rect.centerRight + const Offset(8, 0));
+    await tester.pumpAndSettle();
+    expect(grips, findsNWidgets(8));
+
+    // Drag the right-edge grip: only the width changes
+    await pen.down(rect.centerRight);
+    for (var i = 0; i < 4; i++) {
+      await pen.moveBy(const Offset(15, 0));
+      await tester.pump();
+    }
+    await pen.up();
+    await tester.pumpAndSettle();
+    final after = tester.getRect(box);
+    expect(after.width, greaterThan(rect.width + 30));
+    expect(after.height, closeTo(rect.height, 0.5));
+    expect(after.left, closeTo(rect.left, 0.5));
+    await pen.removePointer();
   });
 
   testWidgets('paneli zinakunjwa na kufunuliwa; uwanja mzima', (tester) async {
