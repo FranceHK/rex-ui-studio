@@ -249,6 +249,77 @@ void main() {
     });
   });
 
+  group('transform', () {
+    const start = Rect.fromLTWH(100, 100, 200, 100);
+
+    test('kila kishiko kinasogeza ukingo wake tu', () {
+      expect(
+        resizeRect(start, Alignment.centerLeft, const Offset(-30, 50)),
+        const Rect.fromLTRB(70, 100, 300, 200),
+      );
+      expect(
+        resizeRect(start, Alignment.topCenter, const Offset(40, -20)),
+        const Rect.fromLTRB(100, 80, 300, 200),
+      );
+      expect(
+        resizeRect(start, Alignment.centerRight, const Offset(25, 0)),
+        const Rect.fromLTRB(100, 100, 325, 200),
+      );
+      expect(
+        resizeRect(start, Alignment.bottomCenter, const Offset(0, 30)),
+        const Rect.fromLTRB(100, 100, 300, 230),
+      );
+      expect(
+        resizeRect(start, Alignment.topLeft, const Offset(10, 10)),
+        const Rect.fromLTRB(110, 110, 300, 200),
+      );
+    });
+
+    test('ukubwa mdogo kabisa na Shift (uwiano)', () {
+      final tiny = resizeRect(
+        start,
+        Alignment.centerLeft,
+        const Offset(500, 0),
+      );
+      expect(tiny.width, minElementSize.width);
+      expect(tiny.right, start.right, reason: 'ukingo wa kulia haubadiliki');
+
+      final kept = resizeRect(
+        start,
+        Alignment.bottomRight,
+        const Offset(100, 0),
+        keepAspect: true,
+      );
+      expect(kept.width / kept.height, closeTo(2, 0.01));
+      expect(kept.topLeft, start.topLeft);
+    });
+
+    test('snap ya ukingo wa kushoto/juu wakati wa kubadilisha ukubwa', () {
+      final t = SnapTargets(
+        artboard: const Size(400, 800),
+        guideX: const [60],
+        guideY: const [40],
+        objects: false,
+        artboardEdges: false,
+      );
+      final r = snapRect(
+        const Rect.fromLTRB(63, 43, 300, 200),
+        t,
+        6,
+        handle: Alignment.topLeft,
+      ).rect;
+      expect(r, const Rect.fromLTRB(60, 40, 300, 200));
+      // Ukingo wa kati: mhimili mwingine hausnap
+      final edge = snapRect(
+        const Rect.fromLTRB(63, 43, 300, 200),
+        t,
+        6,
+        handle: Alignment.centerLeft,
+      ).rect;
+      expect(edge, const Rect.fromLTRB(60, 43, 300, 200));
+    });
+  });
+
   group('artboards', () {
     test('kuongeza kifaa kunaongeza artboard, hakubadilishi', () {
       final c = EditorController();
