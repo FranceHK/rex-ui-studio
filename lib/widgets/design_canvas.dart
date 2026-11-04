@@ -853,6 +853,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
                       child: ColoredBox(color: p.background),
                     ),
                   ),
+                  _referenceLayer(p, onTop: false),
                   // The grid sits on the background, beneath the elements
                   // (always present so toggling it doesn't shift them)
                   Positioned.fill(
@@ -876,6 +877,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
                       single: active && c.selectedIds.length == 1,
                       scale: scale,
                     ),
+                  _referenceLayer(p, onTop: true),
                   if (p.safeArea case final insets? when p.showSafeArea)
                     Positioned.fill(child: SafeAreaGuides(insets: insets)),
                 ],
@@ -927,6 +929,35 @@ class _DesignCanvasState extends State<DesignCanvas> {
             onUpdate: (g) => _resizeArtboard(g, width: true, height: true),
           ),
         ],
+      ),
+    );
+  }
+
+  /// The screen's reference image, beneath or above the elements. Always
+  /// present (possibly empty) so the element widgets never shift.
+  Widget _referenceLayer(DesignPage p, {required bool onTop}) {
+    final r = p.reference;
+    final show = r != null && r.visible && r.onTop == onTop;
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            if (show)
+              Positioned.fromRect(
+                rect: r.rectIn(p.size),
+                child: Opacity(
+                  opacity: r.opacity,
+                  child: Image.memory(
+                    r.bytes,
+                    key: const ValueKey('reference-image'),
+                    fit: BoxFit.fill,
+                    gaplessPlayback: true,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
