@@ -17,8 +17,8 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
   final repo = DevicePresetRepository();
 
-  group('katalogi', () {
-    test('idadi, id za kipekee na vyanzo', () {
+  group('catalog', () {
+    test('count, unique ids and sources', () {
       expect(repo.byManufacturer(Manufacturer.apple), hasLength(34));
       expect(repo.byManufacturer(Manufacturer.samsung), hasLength(50));
       expect(repo.byManufacturer(Manufacturer.google), hasLength(24));
@@ -40,10 +40,10 @@ void main() {
       }
     });
 
-    test('resolution na frame za kimantiki zilizothibitishwa', () {
+    test('verified resolutions and logical frames', () {
       DeviceDisplay main(String id) => repo.byId(id)!.primary;
 
-      // iPhone: scale tofauti na mini zinazoshushwa (downsampled)
+      // iPhone: different scales and downsampled minis
       expect(main('iphone-11').physical, const Size(828, 1792));
       expect(main('iphone-11').logical, const Size(414, 896));
       expect(main('iphone-11').scale, 2);
@@ -54,7 +54,7 @@ void main() {
       for (final p in repo.byManufacturer(Manufacturer.apple)) {
         for (final d in p.displays) {
           expect(d.logicalVerified, isTrue, reason: p.model);
-          // Frame × scale ≥ px halisi (sawa, au kubwa kwa zinazoshushwa)
+          // Frame × scale ≥ physical px (equal, or larger when downsampled)
           expect(
             d.logical!.width * d.scale!,
             greaterThanOrEqualTo(d.physical.width),
@@ -63,21 +63,21 @@ void main() {
         }
       }
 
-      // Pixel: dp kutoka density rasmi ya SDK, si kutoka PPI
+      // Pixel: dp from the official SDK density, not from PPI
       expect(main('pixel-9').logical, const Size(411, 923));
       expect(main('pixel-9').densityDpi, 420);
       expect(main('pixel-8-pro').logical, const Size(448, 997));
       expect(main('pixel-7-pro').logical, const Size(411, 891));
       expect(main('pixel-10a').logicalVerified, isFalse);
 
-      // Samsung: hakuna dp rasmi -> makisio yanayoonyeshwa wazi
+      // Samsung: no official dp -> clearly marked estimates
       for (final p in repo.byManufacturer(Manufacturer.samsung)) {
         for (final d in p.displays) {
           expect(d.logical, isNull, reason: p.model);
           expect(d.isVerified('logical'), isFalse, reason: p.model);
         }
       }
-      // Marekebisho: S21 FE ni 1080×2340
+      // Correction: the S21 FE is 1080×2340
       expect(main('galaxy-s21-fe').physical, const Size(1080, 2340));
       final flip7 = repo.byId('galaxy-z-flip7')!;
       expect(flip7.display(DisplayRole.cover).physical, const Size(948, 1048));
@@ -88,7 +88,7 @@ void main() {
     });
   });
 
-  group('utafutaji', () {
+  group('search', () {
     late CustomPresetManager manager;
     late DeviceSearchController search;
     setUp(() {
@@ -96,7 +96,7 @@ void main() {
       search = DeviceSearchController(repo, manager);
     });
 
-    test('kwa maneno', () {
+    test('by words', () {
       search.setQuery('s25 ultra');
       expect(search.results.map((p) => p.id), ['galaxy-s25-ultra']);
       search.setQuery('fold 7');
@@ -105,7 +105,7 @@ void main() {
       expect(search.results, isEmpty);
     });
 
-    test('mtengenezaji, familia na fold', () {
+    test('manufacturer, family and fold', () {
       search.setManufacturer(Manufacturer.google);
       expect(
         search.results.every((p) => p.manufacturer == Manufacturer.google),
@@ -127,7 +127,7 @@ void main() {
       expect(search.results.every((p) => p.foldable), isTrue);
     });
 
-    test('vipendwa na zilizotumika karibuni', () async {
+    test('favorites and recently used', () async {
       await manager.toggleFavorite('pixel-9');
       await manager.markUsed('iphone-16');
       await manager.markUsed('galaxy-s24');
@@ -138,7 +138,7 @@ void main() {
     });
   });
 
-  test('mwelekeo na hali za kukunjika', () {
+  test('orientation and fold states', () {
     final o = OrientationController();
     expect(o.apply(const Size(402, 874)), const Size(402, 874));
     o.toggle();
@@ -158,7 +158,7 @@ void main() {
   });
 
   group('artboard', () {
-    test('kutoka preset: jina, ukubwa, mwelekeo, metadata', () {
+    test('from a preset: name, size, orientation, metadata', () {
       final page = ArtboardFactory.fromPreset(
         'e1',
         repo.byId('pixel-9-pro-fold')!,
@@ -176,7 +176,7 @@ void main() {
       expect(json['meta']['logicalVerified'], isTrue);
     });
 
-    test('ukubwa maalum na preset ya mtumiaji', () {
+    test('custom size and user presets', () {
       final resized = ArtboardFactory.fromPreset(
         'e1',
         repo.byId('iphone-16')!,
@@ -194,7 +194,7 @@ void main() {
       expect(custom.size, const Size(600, 1024));
     });
 
-    test('artboard nyingi, kubadili kifaa na kukunja kwenye editor', () {
+    test('many artboards, changing device and folding in the editor', () {
       final c = EditorController();
       c.addArtboard(
         (id) => ArtboardFactory.fromPreset(id, repo.byId('galaxy-z-fold7')!),
@@ -215,7 +215,7 @@ void main() {
     });
   });
 
-  test('preset za mtumiaji na vipendwa vinahifadhiwa', () async {
+  test('user presets and favorites are saved', () async {
     final a = CustomPresetManager();
     await a.load();
     await a.addCustom('Kiosk', const Size(600, 1024), basedOn: 'iphone-16');
@@ -230,7 +230,7 @@ void main() {
     expect(b.recents, ['pixel-10']);
   });
 
-  test('artboard inahifadhiwa na kupakiwa tena', () {
+  test('an artboard is saved and loaded again', () {
     final c = EditorController()
       ..addArtboard(
         (id) => ArtboardFactory.fromPreset(
@@ -249,7 +249,7 @@ void main() {
     expect(restored.page.showSafeArea, isTrue);
   });
 
-  test('miradi ya zamani inafunguka bila vipengele kusogea', () {
+  test('old projects open without elements moving', () {
     Map<String, dynamic> legacy(String device) => {
       'id': 'e0',
       'name': 'Skrini 1',
@@ -274,12 +274,12 @@ void main() {
     expect(iphone.customSize, isNull);
     expect(iphone.size, const Size(402, 874));
 
-    // Toleo jipya halitumii ukubwa wa zamani
+    // The new version doesn't use the old size
     final v2 = DesignPage.fromJson({...legacy('galaxy-s25'), 'v': 2});
     expect(v2.size, const Size(411, 891));
   });
 
-  testWidgets('New Design: tafuta, kunja na tengeneza artboard', (
+  testWidgets('New Design: search, fold and create an artboard', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1600, 1000);
@@ -292,12 +292,12 @@ void main() {
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => result = await showNewDesign(context),
-            child: const Text('fungua'),
+            child: const Text('open'),
           ),
         ),
       ),
     );
-    await tester.tap(find.text('fungua'));
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(find.text('New design'), findsOneWidget);
 
