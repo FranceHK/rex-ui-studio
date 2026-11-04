@@ -8,6 +8,7 @@ import '../screens/new_design_screen.dart';
 import '../state/editor_controller.dart';
 import 'icon_browser.dart';
 import 'properties_panel.dart' show PropField;
+import 'shape_picker.dart';
 
 enum SideTab {
   components('Vipengele', AppIcons.components),
@@ -166,7 +167,55 @@ class _ComponentsTab extends StatelessWidget {
                 ),
                 child: _ComponentTile(
                   type: t,
-                  onTap: () => controller.addElement(t),
+                  // Box: chagua umbo kwanza
+                  onTap: t == ElementType.container
+                      ? (tile) async {
+                          final shape = await showShapeMenu(tile);
+                          if (shape != null) {
+                            controller.addElement(t, shape: shape);
+                          }
+                        }
+                      : (_) => controller.addElement(t),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Shapes',
+          style: Theme.of(context).textTheme.titleSmall
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final shape in ElementShape.values)
+              Draggable<NewElement>(
+                data: NewElement(ElementType.container, shape: shape),
+                dragAnchorStrategy: pointerDragAnchorStrategy,
+                feedback: ShapePreview(shape, size: 48),
+                child: Tooltip(
+                  message: shape.label,
+                  child: Material(
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => controller.addElement(
+                        ElementType.container,
+                        shape: shape,
+                      ),
+                      child: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Center(child: ShapePreview(shape, size: 24)),
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -180,7 +229,9 @@ class _ComponentTile extends StatelessWidget {
   const _ComponentTile({required this.type, required this.onTap});
 
   final ElementType type;
-  final VoidCallback onTap;
+
+  /// Inapewa context ya kigae (kwa menyu inayotokea juu yake).
+  final void Function(BuildContext tile) onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +241,7 @@ class _ComponentTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
+        onTap: () => onTap(context),
         child: Padding(
           padding: const EdgeInsets.all(6),
           child: Column(
