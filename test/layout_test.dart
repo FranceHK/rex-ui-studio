@@ -33,7 +33,7 @@ void main() {
   const box = Rect.fromLTWH(0, 0, 400, 800);
 
   group('alignment', () {
-    test('kushoto, katikati, kulia, juu, chini, katikati pande zote', () {
+    test('left, center, right, top, bottom, center both ways', () {
       expect(
         alignRects(rects, AlignOp.left, box).values.map((r) => r.left),
         everyElement(0),
@@ -60,20 +60,20 @@ void main() {
       );
       final both = alignRects(rects, AlignOp.centerBoth, box);
       expect(both.values.map((r) => r.center), everyElement(box.center));
-      // Ukubwa haubadiliki
+      // The size doesn't change
       for (final id in rects.keys) {
         expect(both[id]!.size, rects[id]!.size);
       }
     });
 
-    test('key object haisogei, wengine wanaipanga', () {
+    test('the key object stays put, the others align to it', () {
       final out = alignRects(rects, AlignOp.left, rects['b']!, keyId: 'b');
       expect(out['b'], rects['b']);
       expect(out['a']!.left, 100);
       expect(out['c']!.left, 100);
     });
 
-    test('distribute na nafasi sawa', () {
+    test('distribute and equal spacing', () {
       final d = distributeRects(rects, DistributeOp.top);
       expect(d['a']!.top, 10);
       expect(d['c']!.top, 200);
@@ -86,7 +86,7 @@ void main() {
       expect(g1, closeTo(g2, 0.01));
     });
 
-    test('applyGap na tidy up', () {
+    test('applyGap and tidy up', () {
       final g = applyGap(rects, Axis.horizontal, 16);
       final sorted = g.values.toList()
         ..sort((x, y) => x.left.compareTo(y.left));
@@ -115,7 +115,7 @@ void main() {
       c.undo();
       expect(c.page.elements.firstWhere((e) => e.id == b).rect.left, 60);
 
-      // undo inaondoa uteuzi — chagua tena
+      // undo clears the selection — select again
       c.select(a);
       c.toggleSelect(b);
       c.setView(c.view.copyWith(alignTo: AlignTo.artboard));
@@ -137,8 +137,8 @@ void main() {
     });
   });
 
-  group('rulers na zoom', () {
-    test('hatua za ruler kwa zoom 25/50/100/200/400%', () {
+  group('rulers and zoom', () {
+    test('ruler steps at 25/50/100/200/400% zoom', () {
       final steps = {
         for (final z in [0.25, 0.5, 1.0, 2.0, 4.0]) z: rulerStep(z),
       };
@@ -148,7 +148,7 @@ void main() {
       }
     });
 
-    test('world ↔ screen ni sawa kwenye kila zoom', () {
+    test('world ↔ screen round-trips at every zoom', () {
       for (final z in [0.25, 0.5, 1.0, 2.0, 4.0]) {
         final t = const CanvasTransform(
           1,
@@ -158,7 +158,7 @@ void main() {
         final back = t.toWorld(t.toScreen(p));
         expect(back.dx, closeTo(p.dx, 1e-9));
         expect(back.dy, closeTo(p.dy, 1e-9));
-        // Pointi ya focal haisogei wakati wa zoom
+        // The focal point doesn't move while zooming
         final focalWorld = const CanvasTransform(
           1,
           Offset(30, 40),
@@ -176,15 +176,15 @@ void main() {
     });
   });
 
-  group('guides, gridi na snapping', () {
-    test('guide: ongeza, sogeza, funga, futa, undo, hifadhi', () {
+  group('guides, grid and snapping', () {
+    test('guide: add, move, lock, delete, undo, save', () {
       final c = EditorController();
       final id = c.addGuide(Axis.vertical, 24);
       c.moveGuide(id, 40);
       expect(c.page.guides.single.position, 40);
       c.toggleGuideLock(id);
       c.moveGuide(id, 80);
-      expect(c.page.guides.single.position, 40, reason: 'imefungwa');
+      expect(c.page.guides.single.position, 40, reason: 'locked');
       c.toggleGuideLock(id);
       c.addGuide(Axis.horizontal, 100);
       c.setGrid(const GridSettings(show: true, size: 10));
@@ -197,7 +197,7 @@ void main() {
       expect(restored.page.grid.show, isTrue);
       expect(restored.page.grid.size, 10);
       expect(restored.view.showRulers, isFalse);
-      // Id mpya hazigongani na zilizohifadhiwa
+      // New ids don't clash with the saved ones
       final next = restored.addGuide(Axis.vertical, 1);
       expect(restored.page.guides.where((g) => g.id == next), hasLength(1));
 
@@ -209,7 +209,7 @@ void main() {
       expect(c.page.guides, isEmpty);
     });
 
-    test('snap ndani ya tolerance tu (6px skrini kwa kila zoom)', () {
+    test('snap only within tolerance (6 screen px at any zoom)', () {
       final t = SnapTargets(
         artboard: const Size(400, 800),
         others: const [Rect.fromLTWH(200, 300, 50, 50)],
@@ -217,7 +217,7 @@ void main() {
       );
       for (final z in [0.25, 0.5, 1.0, 2.0, 4.0]) {
         final tol = 6 / z;
-        // Karibu na guide (ndani ya tolerance) → inasnap
+        // Near a guide (within tolerance) → snaps
         final near = snapRect(
           Rect.fromLTWH(120 + tol * 0.8, 500, 10, 10),
           t,
@@ -225,16 +225,16 @@ void main() {
         );
         expect(near.rect.left, 120, reason: 'zoom $z');
         expect(near.lines, isNotEmpty);
-        // Nje ya tolerance → haisogei
+        // Outside the tolerance → doesn't move
         final far = Rect.fromLTWH(120 + tol * 1.5, 500, 10, 10);
         expect(snapRect(far, t, tol).rect.left, far.left, reason: 'zoom $z');
       }
-      // Ukingo wa juu unasnap kwenye kitu kingine
+      // The top edge snaps to another element
       final obj = snapRect(const Rect.fromLTWH(10, 302, 20, 20), t, 6);
       expect(obj.rect.top, 300);
     });
 
-    test('gridi: safu za stretch na snap kwenye gridi', () {
+    test('grid: stretch columns and snap to grid', () {
       const cols = TrackGrid(enabled: true, count: 4, gutter: 16, margin: 16);
       final tracks = cols.tracks(400);
       expect(tracks, hasLength(4));
@@ -256,7 +256,7 @@ void main() {
   group('transform', () {
     const start = Rect.fromLTWH(100, 100, 200, 100);
 
-    test('kila kishiko kinasogeza ukingo wake tu', () {
+    test('each handle moves only its own edges', () {
       expect(
         resizeRect(start, Alignment.centerLeft, const Offset(-30, 50)),
         const Rect.fromLTRB(70, 100, 300, 200),
@@ -279,14 +279,14 @@ void main() {
       );
     });
 
-    test('ukubwa mdogo kabisa na Shift (uwiano)', () {
+    test('minimum size and Shift (aspect ratio)', () {
       final tiny = resizeRect(
         start,
         Alignment.centerLeft,
         const Offset(500, 0),
       );
       expect(tiny.width, minElementSize.width);
-      expect(tiny.right, start.right, reason: 'ukingo wa kulia haubadiliki');
+      expect(tiny.right, start.right, reason: 'the right edge stays put');
 
       final kept = resizeRect(
         start,
@@ -298,7 +298,7 @@ void main() {
       expect(kept.topLeft, start.topLeft);
     });
 
-    test('snap ya ukingo wa kushoto/juu wakati wa kubadilisha ukubwa', () {
+    test('left/top edge snapping while resizing', () {
       final t = SnapTargets(
         artboard: const Size(400, 800),
         guideX: const [60],
@@ -313,7 +313,7 @@ void main() {
         handle: Alignment.topLeft,
       ).rect;
       expect(r, const Rect.fromLTRB(60, 40, 300, 200));
-      // Ukingo wa kati: mhimili mwingine hausnap
+      // Edge midpoint: the other axis doesn't snap
       final edge = snapRect(
         const Rect.fromLTRB(63, 43, 300, 200),
         t,
@@ -325,7 +325,7 @@ void main() {
   });
 
   group('shapes', () {
-    test('kila umbo lina border na code; JSON inahifadhi umbo', () {
+    test('every shape has a border and code; JSON keeps the shape', () {
       for (final shape in ElementShape.values) {
         expect(shape.border(12, const Size(100, 80)), isA<ShapeBorder>());
         expect(shape.code(12, const Size(100, 80)), isNotEmpty);
@@ -343,19 +343,19 @@ void main() {
         ..addElement(ElementType.container, shape: ElementShape.star);
       final e = c.selected!;
       expect(e.shape, ElementShape.star);
-      expect(e.rect.width, e.rect.height, reason: 'umbo jipya ni mraba');
+      expect(e.rect.width, e.rect.height, reason: 'a new shape is square');
       final back = UiElement.fromJson(
         jsonDecode(jsonEncode(e.toJson())) as Map<String, dynamic>,
       );
       expect(back.shape, ElementShape.star);
-      // Mstatili ni chaguo-msingi na hauandikwi kwenye JSON
+      // Rectangle is the default and isn't written to JSON
       c.addElement(ElementType.container);
       expect(c.selected!.toJson().containsKey('shape'), isFalse);
     });
   });
 
   group('artboards', () {
-    test('kuongeza kifaa kunaongeza artboard, hakubadilishi', () {
+    test('adding a device adds an artboard instead of changing one', () {
       final c = EditorController();
       final first = c.page.id;
       c.addPage(deviceById('pixel-10'));
@@ -370,7 +370,7 @@ void main() {
           greaterThanOrEqualTo(
             c.pages[i - 1].position!.dx + c.pages[i - 1].size.width,
           ),
-          reason: 'artboard hazipishani',
+          reason: 'artboards don\'t overlap',
         );
       }
       c.moveArtboard(1, const Offset(-500, 900));
@@ -380,7 +380,7 @@ void main() {
     });
   });
 
-  testWidgets('Backspace kwenye kisanduku cha upana haifuti kipengele', (
+  testWidgets('Backspace in the width field does not delete the element', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1600, 1000);
@@ -394,7 +394,7 @@ void main() {
     await tester.tap(find.text(info.name));
     await tester.pumpAndSettle();
 
-    // Chagua kitufe kwa kalamu (hali ya kalamu: kidole hakihariri)
+    // Select the button with the pen (pen mode: fingers don't edit)
     await tester.tap(
       find.text('Continue').first,
       kind: PointerDeviceKind.stylus,
@@ -410,14 +410,14 @@ void main() {
     expect(
       find.widgetWithText(TextField, 'Width'),
       findsOneWidget,
-      reason: 'kipengele bado kipo',
+      reason: 'the element still exists',
     );
 
-    // Backspace ilibadilisha 160 → 16; rudisha upana ili kitufe kibonyezeke
+    // Backspace changed 160 → 16; restore the width so the button is tappable
     await tester.enterText(find.widgetWithText(TextField, 'Width'), '160');
     await tester.pumpAndSettle();
 
-    // Ukirudi kwenye canvas, Delete inafuta kipengele
+    // Back on the canvas, Delete removes the element
     await tester.tap(
       find.descendant(
         of: find.byType(DesignCanvas),
@@ -431,7 +431,7 @@ void main() {
     expect(find.widgetWithText(TextField, 'Width'), findsNothing);
   });
 
-  testWidgets('kuburuta kutoka ruler ya juu na ya kushoto kunaunda guides', (
+  testWidgets('dragging from the top and left rulers creates guides', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1600, 1000);
@@ -454,7 +454,7 @@ void main() {
     final top = tester.getCenter(find.byKey(const ValueKey('ruler-top')));
     final left = tester.getCenter(find.byKey(const ValueKey('ruler-left')));
 
-    // Ruler ya juu → buruta chini → guide ya mlalo (Y)
+    // Top ruler → drag down → horizontal guide (Y)
     var g = await tester.startGesture(top, kind: PointerDeviceKind.stylus);
     for (var i = 0; i < 10; i++) {
       await g.moveBy(const Offset(0, 20));
@@ -465,7 +465,7 @@ void main() {
     expect(find.byKey(const ValueKey('guide-new')), findsNothing);
     expect(savedGuides(), findsNWidgets(1));
 
-    // Ruler ya kushoto → buruta kulia → guide wima (X)
+    // Left ruler → drag right → vertical guide (X)
     g = await tester.startGesture(left, kind: PointerDeviceKind.stylus);
     for (var i = 0; i < 10; i++) {
       await g.moveBy(const Offset(20, 0));
@@ -477,7 +477,7 @@ void main() {
     expect(savedGuides(), findsNWidgets(2));
   });
 
-  testWidgets('hali ya kalamu: kidole hakihariri, vidole 2 vinazoom, lock', (
+  testWidgets('pen mode: a finger doesn\'t edit, 2 fingers zoom, lock', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1600, 1000);
@@ -485,12 +485,8 @@ void main() {
     addTearDown(tester.view.reset);
 
     final c = EditorController()..addElement(ElementType.button);
-    expect(
-      c.view.penMode,
-      isTrue,
-      reason: 'Android → kalamu kwa chaguo-msingi',
-    );
-    final info = await ProjectStorage().create('Kalamu', c.toJson());
+    expect(c.view.penMode, isTrue, reason: 'Android → pen mode by default');
+    final info = await ProjectStorage().create('Pen', c.toJson());
     await tester.pumpWidget(const RexaStudioApp());
     await tester.pumpAndSettle();
     await tester.tap(find.text(info.name));
@@ -499,7 +495,7 @@ void main() {
     final button = find.text('Continue').first;
     final before = tester.getTopLeft(button);
 
-    // Kiganja/kidole kimoja: hakichagui wala kusogeza kitufe
+    // A palm/single finger neither selects nor moves the button
     await tester.tap(button);
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, 'Width'), findsNothing);
@@ -507,7 +503,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(button), before);
 
-    // Kalamu inachagua
+    // The pen selects
     await tester.tap(button, kind: PointerDeviceKind.stylus);
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, 'Width'), findsOneWidget);
@@ -537,13 +533,9 @@ void main() {
       int.parse(z1.replaceAll('%', '')),
       greaterThan(int.parse(z0.replaceAll('%', ''))),
     );
-    expect(
-      tester.getTopLeft(button),
-      isNot(before),
-      reason: 'mwonekano umezoom',
-    );
+    expect(tester.getTopLeft(button), isNot(before), reason: 'the view zoomed');
 
-    // Funga mwonekano: pinch haibadilishi zoom
+    // Lock view: pinch doesn't change the zoom
     await tester.tap(find.byTooltip('Lock view (keep still while editing)'));
     await tester.pumpAndSettle();
     await pinch(80);
@@ -646,7 +638,7 @@ void main() {
     await pen.removePointer();
   });
 
-  testWidgets('paneli zinakunjwa na kufunuliwa; uwanja mzima', (tester) async {
+  testWidgets('panels collapse and expand; full canvas', (tester) async {
     tester.view.physicalSize = const Size(1600, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -662,19 +654,19 @@ void main() {
 
     final canvas = find.byType(DesignCanvas);
     final full = tester.getSize(canvas).width;
-    expect(find.text('Text'), findsOneWidget); // paneli ya vipengele
+    expect(find.text('Text'), findsOneWidget); // components panel
 
     await tester.tap(find.byTooltip('Collapse panel (Cmd/Ctrl + \\)'));
     await tester.pumpAndSettle();
     expect(find.text('Text'), findsNothing);
     expect(tester.getSize(canvas).width, greaterThan(full));
 
-    // Kubonyeza tab kwenye rail kunafunua paneli tena
+    // Tapping a rail tab expands the panel again
     await tester.tap(find.text('Components'));
     await tester.pumpAndSettle();
     expect(find.text('Text'), findsOneWidget);
 
-    // Uwanja mzima: paneli zote mbili zinakunjwa, kisha zinarudi
+    // Full canvas: both panels collapse, then come back
     await tester.tap(
       find.byTooltip('Full canvas — collapse panels (Cmd/Ctrl + \\)'),
     );
@@ -687,7 +679,7 @@ void main() {
     expect(tester.getSize(canvas).width, full);
   });
 
-  testWidgets('Export image: ukubwa wa PNG unafuata scale', (tester) async {
+  testWidgets('Export image: the PNG size follows the scale', (tester) async {
     tester.view.physicalSize = const Size(1200, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -709,7 +701,7 @@ void main() {
     expect(find.textContaining('LoginScreen@3x.png'), findsOneWidget);
   });
 
-  testWidgets('Run: kushuka chini na kufuata link', (tester) async {
+  testWidgets('Run: scroll down and follow a link', (tester) async {
     tester.view.physicalSize = const Size(1200, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
