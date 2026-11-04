@@ -17,6 +17,7 @@ import 'package:rexa_ui_studio/screens/export_image_dialog.dart';
 import 'package:rexa_ui_studio/screens/run_screen.dart';
 import 'package:rexa_ui_studio/services/project_storage.dart';
 import 'package:rexa_ui_studio/state/editor_controller.dart';
+import 'package:rexa_ui_studio/widgets/canvas_painters.dart';
 import 'package:rexa_ui_studio/widgets/design_canvas.dart';
 import 'package:rexa_ui_studio/widgets/element_view.dart';
 
@@ -546,6 +547,28 @@ void main() {
     await tester.pumpAndSettle();
     await pinch(80);
     expect(zoom(), z1);
+  });
+
+  testWidgets('the grid is painted beneath the elements', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final c = EditorController()..addElement(ElementType.container);
+    c.setGrid(c.page.grid.copyWith(show: true));
+    final info = await ProjectStorage().create('Grid', c.toJson());
+    await tester.pumpWidget(const RexaStudioApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(info.name));
+    await tester.pumpAndSettle();
+
+    final order = tester.allWidgets.toList();
+    final grid = order.indexWhere(
+      (w) => w is CustomPaint && w.painter is GridPainter,
+    );
+    final element = order.indexWhere((w) => w is ElementView);
+    expect(grid, isNonNegative);
+    expect(grid, lessThan(element), reason: 'painted first = underneath');
   });
 
   testWidgets('pen hover shows handles; an edge grip resizes untapped', (
