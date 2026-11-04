@@ -426,8 +426,9 @@ class EditorController extends ChangeNotifier {
     } catch (e) {
       throw FormatException('Invalid project: $e');
     }
-    if (loaded.isEmpty)
+    if (loaded.isEmpty) {
       throw const FormatException('The project has no screens');
+    }
 
     if (record) {
       checkpoint();
