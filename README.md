@@ -21,7 +21,14 @@ ready-to-use Flutter code. Built with Flutter (web, Android, macOS).
   locked while you edit.
 - **Run** — preview screens inside a device frame, scroll long screens and
   follow prototype links between screens.
-- **Flutter export** — generate Flutter widget code for your design.
+- **Shapes** — boxes and images can be rectangles, ellipses, triangles,
+  diamonds, pentagons, hexagons or stars.
+- **Resize from any side** — eight handles (corners and edge midpoints) with
+  snapping; Shift keeps the aspect ratio on corners.
+- **Export image** — save any screen as a PNG at 1x–4x, with or without its
+  background.
+- **Code export** — pick Flutter, SwiftUI, Jetpack Compose, HTML or React
+  and copy the generated code.
 - 4,900+ icons from [amazing_icons](https://pub.dev/packages/amazing_icons).
 
 ## Getting started
