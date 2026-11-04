@@ -634,14 +634,14 @@ void main() {
       MaterialApp(home: RunScreen(pages: [tall, second])),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('shuka chini'), findsOneWidget);
+    expect(find.textContaining('scroll down'), findsOneWidget);
     expect(find.text('1 / 2'), findsOneWidget);
 
     await tester.tap(find.text('Nenda'));
     await tester.pumpAndSettle();
     expect(find.text('2 / 2'), findsOneWidget);
-    expect(find.text('Rudi'), findsOneWidget);
-    await tester.tap(find.text('Rudi'));
+    expect(find.text('Back'), findsOneWidget);
+    await tester.tap(find.text('Back'));
     await tester.pumpAndSettle();
     expect(find.text('1 / 2'), findsOneWidget);
   });

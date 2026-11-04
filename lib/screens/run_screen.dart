@@ -6,10 +6,9 @@ import '../models/device_frame.dart';
 import '../models/ui_element.dart';
 import '../widgets/element_view.dart';
 
-/// "Run": jaribu muundo kama app. Skrini inaonyeshwa ndani ya kifaa kwa
-/// ukubwa wake halisi; artboard ikiwa ndefu kuliko skrini ya kifaa,
-/// unaweza kushuka chini (scroll). Vipengele vyenye "link" vinafungua
-/// skrini nyingine.
+/// "Run": try the design as an app. The screen is shown inside the device
+/// at its real size; when the artboard is taller than the device screen
+/// you can scroll down. Elements with a "link" open another screen.
 class RunScreen extends StatefulWidget {
   const RunScreen({super.key, required this.pages, this.initialIndex = 0});
 
@@ -53,8 +52,8 @@ class _RunScreenState extends State<RunScreen> {
     if (target >= 0) _go(target);
   }
 
-  /// Ukubwa wa skrini ya kifaa (dirisha la kuonyesha). Artboard ikiwa
-  /// imerefushwa, maudhui yanaskrolishwa ndani ya dirisha hili.
+  /// Size of the device screen (the viewport). When the artboard is
+  /// taller, its content scrolls inside this viewport.
   Size get _viewport {
     final p = page;
     if (p.device.id == customDeviceId) return p.size;
@@ -92,7 +91,7 @@ class _RunScreenState extends State<RunScreen> {
             backgroundColor: const Color(0xFF111A2E),
             foregroundColor: Colors.white,
             leading: IconButton(
-              tooltip: 'Funga (Esc)',
+              tooltip: 'Close (Esc)',
               icon: const Icon(AppIcons.close),
               onPressed: () => Navigator.of(context).pop(),
             ),
@@ -115,10 +114,10 @@ class _RunScreenState extends State<RunScreen> {
                   onPressed: _back,
                   style: TextButton.styleFrom(foregroundColor: Colors.white),
                   icon: const Icon(AppIcons.back, size: 18),
-                  label: const Text('Rudi'),
+                  label: const Text('Back'),
                 ),
               IconButton(
-                tooltip: 'Skrini iliyotangulia (←)',
+                tooltip: 'Previous screen (←)',
                 onPressed: _index > 0
                     ? () => _go(_index - 1, remember: false)
                     : null,
@@ -129,14 +128,14 @@ class _RunScreenState extends State<RunScreen> {
                 style: const TextStyle(color: Colors.white70),
               ),
               IconButton(
-                tooltip: 'Skrini inayofuata (→)',
+                tooltip: 'Next screen (→)',
                 onPressed: _index < widget.pages.length - 1
                     ? () => _go(_index + 1, remember: false)
                     : null,
                 icon: const Icon(AppIcons.next),
               ),
               IconButton(
-                tooltip: _bezel ? 'Ficha fremu ya kifaa' : 'Onyesha fremu',
+                tooltip: _bezel ? 'Hide device frame' : 'Show device frame',
                 onPressed: () => setState(() => _bezel = !_bezel),
                 icon: Icon(
                   AppIcons.phone,
@@ -213,10 +212,10 @@ class _RunScreenState extends State<RunScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  '${p.device.name} · skrini ${viewport.width.round()}×'
+                  '${p.device.name} · screen ${viewport.width.round()}×'
                   '${viewport.height.round()}'
-                  '${scrolls ? ' · maudhui ${p.size.height.round()} (shuka chini)' : ''}'
-                  '${p.elements.any((e) => e.link != null) ? ' · bonyeza vipengele vyenye link' : ''}',
+                  '${scrolls ? ' · content ${p.size.height.round()} (scroll down)' : ''}'
+                  '${p.elements.any((e) => e.link != null) ? ' · tap linked elements' : ''}',
                   style: TextStyle(color: scheme.outlineVariant, fontSize: 12),
                 ),
               ),
