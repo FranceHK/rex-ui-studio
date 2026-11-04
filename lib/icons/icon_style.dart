@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 
 import 'icon_catalog.dart';
 
-/// Mitindo ya icons za amazing_icons ambayo mtumiaji anaweza kuchagua.
+/// The amazing_icons styles the user can choose from.
 enum IconStyle {
   broken('Broken', 'AmazingIconBroken'),
   outlined('Outlined', 'AmazingIconOutlined'),
@@ -35,10 +35,10 @@ enum IconStyle {
     payment => paymentIcons.containsKey(name),
   };
 
-  /// Icons za Payment zina rangi zake za asili.
+  /// Payment icons keep their own original colors.
   bool get colorable => this != payment;
 
-  /// Faili la kuimport kwenye code inayotolewa.
+  /// The file to import in the generated code.
   String get importPath => 'package:amazing_icons/$name.dart';
 
   Widget build(String icon, {required double size, required Color color}) {
@@ -60,7 +60,7 @@ enum IconStyle {
   static Widget? _font(IconData? data, double size, Color color) =>
       data == null ? null : Icon(data, size: size, color: color);
 
-  /// Dart code ya kuchora icon hii.
+  /// Dart code that draws this icon.
   String code(String icon, {required String size, required String color}) {
     return switch (this) {
       broken ||
@@ -72,7 +72,7 @@ enum IconStyle {
   }
 }
 
-/// Inalinganisha jina na utafutaji: "arrow left" inapata "arrowLeft".
+/// Matches a name against a search: "arrow left" finds "arrowLeft".
 bool iconMatches(String name, String query) {
   final q = query.toLowerCase().replaceAll(RegExp(r'[\s_-]'), '');
   return q.isEmpty || name.toLowerCase().contains(q);
