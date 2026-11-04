@@ -9,7 +9,7 @@ import '../state/editor_controller.dart';
 import 'editor_screen.dart';
 import 'new_design_screen.dart';
 
-/// Vifaa vinavyoonyeshwa kwanza wakati wa kuanza mradi.
+/// Devices offered first when starting a project.
 const _quickDevices = [
   'iphone-17-pro',
   'galaxy-s25',
@@ -21,7 +21,7 @@ const _quickDevices = [
   'watch-s11-46',
 ];
 
-/// Ukurasa wa mwanzo: kuanzisha mradi mpya au kufungua uliopo.
+/// Start page: create a new project or open an existing one.
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key, this.storage});
 
@@ -58,7 +58,7 @@ class _StartScreenState extends State<StartScreen> {
   Future<void> _create({ArtboardBuilder? artboard}) async {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Andika jina la mradi kwanza');
+      setState(() => _nameError = 'Enter a project name first');
       return;
     }
     final controller = EditorController(device: _device);
@@ -74,13 +74,16 @@ class _StartScreenState extends State<StartScreen> {
     await _open(info);
   }
 
-  /// Chagua kifaa kwenye katalogi kamili (New Design), kisha anza mradi.
+  /// Pick a device from the full catalog (New Design), then start.
   Future<void> _createFromCatalog() async {
     if (_name.text.trim().isEmpty) {
-      setState(() => _nameError = 'Andika jina la mradi kwanza');
+      setState(() => _nameError = 'Enter a project name first');
       return;
     }
-    final artboard = await showNewDesign(context, createLabel: 'Anza kubuni');
+    final artboard = await showNewDesign(
+      context,
+      createLabel: 'Start designing',
+    );
     if (artboard != null && mounted) await _create(artboard: artboard);
   }
 
@@ -98,7 +101,7 @@ class _StartScreenState extends State<StartScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Badilisha jina'),
+        title: const Text('Rename'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -107,11 +110,11 @@ class _StartScreenState extends State<StartScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Ghairi'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, ctrl.text),
-            child: const Text('Hifadhi'),
+            child: const Text('Save'),
           ),
         ],
       ),
@@ -126,21 +129,21 @@ class _StartScreenState extends State<StartScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Futa "${info.name}"?'),
+        title: Text('Delete "${info.name}"?'),
         content: const Text(
-          'Mradi huu na skrini zake zote zitafutwa kabisa kwenye kifaa hiki.',
+          'This project and all its screens will be permanently deleted from this device.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Ghairi'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Futa'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -212,7 +215,7 @@ class _StartScreenState extends State<StartScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Anza mradi mpya',
+              'Start a new project',
               style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 16),
@@ -225,14 +228,14 @@ class _StartScreenState extends State<StartScreen> {
                 if (_nameError != null) setState(() => _nameError = null);
               },
               decoration: InputDecoration(
-                labelText: 'Jina la mradi',
-                hintText: 'k.m. App ya Benki',
+                labelText: 'Project name',
+                hintText: 'e.g. Banking app',
                 prefixIcon: const Icon(AppIcons.edit),
                 errorText: _nameError,
               ),
             ),
             const SizedBox(height: 20),
-            Text('Kifaa cha kuanzia', style: text.labelLarge),
+            Text('Starting device', style: text.labelLarge),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -256,7 +259,7 @@ class _StartScreenState extends State<StartScreen> {
                 onPressed: _createFromCatalog,
                 icon: const Icon(AppIcons.search, size: 18),
                 label: Text(
-                  'Katalogi kamili: simu ${phoneCatalog.length} '
+                  'Full catalog: ${phoneCatalog.length} phones '
                   '(Apple, Samsung, Google)…',
                 ),
               ),
@@ -272,7 +275,7 @@ class _StartScreenState extends State<StartScreen> {
               ),
               icon: const Icon(AppIcons.add),
               label: const Text(
-                'Anza kubuni',
+                'Start designing',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
@@ -293,7 +296,7 @@ class _StartScreenState extends State<StartScreen> {
         Row(
           children: [
             Text(
-              'Miradi yako',
+              'Your projects',
               style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(width: 10),
@@ -328,11 +331,11 @@ class _StartScreenState extends State<StartScreen> {
               children: [
                 Icon(AppIcons.folder, size: 56, color: scheme.outline),
                 const SizedBox(height: 12),
-                Text('Bado hakuna mradi', style: text.titleMedium),
+                Text('No projects yet', style: text.titleMedium),
                 const SizedBox(height: 4),
                 Text(
-                  'Andika jina la mradi upande wa kushoto, kisha bonyeza '
-                  '"Anza kubuni".',
+                  'Enter a project name on the left, then tap '
+                  '"Start designing".',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: scheme.outline),
                 ),
@@ -400,8 +403,8 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Buni UI za simu, tablet, kompyuta na saa janja — kisha pata '
-            'Flutter code papo hapo.',
+            'Design UIs for phones, tablets, computers and smartwatches — then get '
+            'production code instantly.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 15,
@@ -413,9 +416,9 @@ class _Hero extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _Pill('${devices.length - 1} vifaa'),
+              _Pill('${devices.length - 1} devices'),
               _Pill('$iconCount+ icons'),
-              const _Pill('Flutter code'),
+              const _Pill('5 code languages'),
             ],
           ),
         ],
@@ -504,7 +507,7 @@ class _ProjectCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Skrini ${info.screens} · ${device.name}',
+                          '${info.screens == 1 ? '1 screen' : '${info.screens} screens'} · ${device.name}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: text.bodySmall,
@@ -523,12 +526,15 @@ class _ProjectCard extends StatelessWidget {
                     icon: const Icon(AppIcons.more),
                     onSelected: (action) => action(),
                     itemBuilder: (_) => [
-                      PopupMenuItem(value: onOpen, child: const Text('Fungua')),
+                      PopupMenuItem(value: onOpen, child: const Text('Open')),
                       PopupMenuItem(
                         value: onRename,
-                        child: const Text('Badilisha jina'),
+                        child: const Text('Rename'),
                       ),
-                      PopupMenuItem(value: onDelete, child: const Text('Futa')),
+                      PopupMenuItem(
+                        value: onDelete,
+                        child: const Text('Delete'),
+                      ),
                     ],
                   ),
                 ],
@@ -541,12 +547,12 @@ class _ProjectCard extends StatelessWidget {
   }
 }
 
-/// "dakika 5 zilizopita", "jana", ...
+/// "5 min ago", "Yesterday", ...
 String timeAgo(DateTime time, [DateTime? now]) {
   final d = (now ?? DateTime.now()).difference(time);
-  if (d.inMinutes < 1) return 'Sasa hivi';
-  if (d.inHours < 1) return 'Dakika ${d.inMinutes} zilizopita';
-  if (d.inDays < 1) return 'Saa ${d.inHours} zilizopita';
-  if (d.inDays == 1) return 'Jana';
-  return 'Siku ${d.inDays} zilizopita';
+  if (d.inMinutes < 1) return 'Just now';
+  if (d.inHours < 1) return '${d.inMinutes} min ago';
+  if (d.inDays < 1) return '${d.inHours} h ago';
+  if (d.inDays == 1) return 'Yesterday';
+  return '${d.inDays} days ago';
 }

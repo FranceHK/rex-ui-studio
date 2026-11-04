@@ -27,17 +27,17 @@ void main() {
     useDesktopView(tester);
     await tester.pumpWidget(const RexaStudioApp());
     await tester.pumpAndSettle();
-    expect(find.text('Bado hakuna mradi'), findsOneWidget);
+    expect(find.text('No projects yet'), findsOneWidget);
 
     // Bila jina, mradi haufunguliwi
-    await tester.ensureVisible(find.text('Anza kubuni'));
-    await tester.tap(find.text('Anza kubuni'));
+    await tester.ensureVisible(find.text('Start designing'));
+    await tester.tap(find.text('Start designing'));
     await tester.pump();
-    expect(find.text('Andika jina la mradi kwanza'), findsOneWidget);
+    expect(find.text('Enter a project name first'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, 'App ya Benki');
     await tester.tap(find.text('Galaxy S25'));
-    await tester.tap(find.text('Anza kubuni'));
+    await tester.tap(find.text('Start designing'));
     await tester.pumpAndSettle();
 
     expect(find.text('App ya Benki'), findsOneWidget);
@@ -53,7 +53,7 @@ void main() {
     await tester.tap(find.byTooltip('Miradi yote'));
     await tester.pumpAndSettle();
     expect(find.text('App ya Benki'), findsOneWidget);
-    expect(find.textContaining('Skrini 1 · Galaxy S25'), findsOneWidget);
+    expect(find.textContaining('1 screen · Galaxy S25'), findsOneWidget);
   });
 
   testWidgets('kutafuta icon na kuiweka kwenye skrini', (tester) async {
