@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 
-/// Mwongozo (guide) wa artboard. [axis] = vertical → mstari wima kwenye
-/// X = [position]; horizontal → mstari mlalo kwenye Y = [position].
-/// [position] iko kwenye nafasi ya artboard (artboard-local).
+/// An artboard guide. [axis] = vertical → a vertical line at
+/// X = [position]; horizontal → a horizontal line at Y = [position].
+/// [position] is in artboard-local coordinates.
 class Guide {
   const Guide({
     required this.id,
@@ -19,7 +19,7 @@ class Guide {
 
   bool get vertical => axis == Axis.vertical;
 
-  /// Maandishi ya kuonyesha, k.m. "X = 120".
+  /// Display text, e.g. "X = 120".
   String get label => '${vertical ? 'X' : 'Y'} = ${_n(position)}';
 
   Guide copyWith({double? position, bool? locked}) => Guide(
@@ -47,10 +47,10 @@ class Guide {
 String _n(double v) =>
     v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
 
-/// Gridi ya safu (columns) au mistari (rows) ya artboard.
+/// A column or row grid on the artboard.
 ///
-/// [size] = null → safu "zinanyooka" (stretch) kujaza nafasi kati ya
-/// margin; vinginevyo kila safu ina upana [size] na zimewekwa katikati.
+/// [size] = null → the columns "stretch" to fill the space between the
+/// margins; otherwise each column is [size] wide and they are centered.
 class TrackGrid {
   const TrackGrid({
     this.enabled = false,
@@ -68,7 +68,7 @@ class TrackGrid {
 
   bool get stretch => size == null;
 
-  /// Sehemu (mwanzo, mwisho) za kila safu kwa urefu [length] wa artboard.
+  /// The (start, end) of each column along the artboard [length].
   List<(double, double)> tracks(double length) {
     if (count < 1) return const [];
     final double track;
@@ -120,7 +120,7 @@ class TrackGrid {
   );
 }
 
-/// Mipangilio ya gridi ya artboard moja.
+/// Grid settings of one artboard.
 class GridSettings {
   const GridSettings({
     this.show = false,
@@ -132,7 +132,7 @@ class GridSettings {
     this.rows = const TrackGrid(count: 6),
   });
 
-  /// Gridi ya miraba inaonekana.
+  /// The square grid is visible.
   final bool show;
   final double size;
   final Color color;
@@ -193,18 +193,18 @@ class GridSettings {
   }
 }
 
-/// Alignment inalenga nini.
+/// What alignment is relative to.
 enum AlignTo {
-  selection('Uteuzi (selection)'),
+  selection('Selection'),
   artboard('Artboard'),
-  keyObject('Kipengele kikuu (key object)'),
-  parent('Fremu mzazi (parent frame)');
+  keyObject('Key object'),
+  parent('Parent frame');
 
   const AlignTo(this.label);
   final String label;
 }
 
-/// Mapendeleo ya mwonekano ya mradi (yanahifadhiwa pamoja na mradi).
+/// The project's view preferences (saved with the project).
 class ViewSettings {
   const ViewSettings({
     this.showRulers = true,
@@ -240,15 +240,15 @@ class ViewSettings {
   final double hGap;
   final double vGap;
 
-  /// Hali ya kalamu: kidole kimoja hakihariri canvas (kiganja hakigusi
-  /// vitu kwa bahati mbaya); kalamu/kipanya vinahariri, vidole viwili
-  /// vinazoom na kusogeza. null = chaguo-msingi la kifaa ([penMode]).
+  /// Pen mode: a single finger doesn't edit the canvas (so a palm can't
+  /// touch things by accident); pen/mouse edit, two fingers zoom and
+  /// pan. null = the device default ([penMode]).
   final bool? penOnly;
 
-  /// Mwonekano umefungwa: canvas haisogei wala kuzoom kwa ishara.
+  /// The view is locked: gestures don't pan or zoom the canvas.
   final bool lockView;
 
-  /// Kwenye tablet/simu hali ya kalamu inawashwa kwa chaguo-msingi.
+  /// On tablets/phones pen mode is on by default.
   bool get penMode =>
       penOnly ??
       (!kIsWeb &&
