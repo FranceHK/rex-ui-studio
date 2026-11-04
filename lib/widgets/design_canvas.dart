@@ -41,8 +41,11 @@ class _MoveDrag extends _Drag {
 }
 
 class _ResizeDrag extends _Drag {
-  _ResizeDrag(this.id, this.start, this.pointer, this.targets);
+  _ResizeDrag(this.id, this.start, this.pointer, this.targets, this.handle);
   final String id;
+
+  /// Kishiko kinachoburutwa: kona au katikati ya ukingo.
+  final Alignment handle;
   final Rect start;
   final Offset pointer;
   final SnapTargets targets;
@@ -249,8 +252,8 @@ class _DesignCanvasState extends State<DesignCanvas> {
     });
   }
 
-  void _beginResize(UiElement e, Offset global) {
-    _drag = _ResizeDrag(e.id, e.rect, _local(global), _targets({e.id}));
+  void _beginResize(UiElement e, Alignment handle, Offset global) {
+    _drag = _ResizeDrag(e.id, e.rect, _local(global), _targets({e.id}), handle);
   }
 
   void _updateResize(Offset global) {
@@ -261,15 +264,19 @@ class _DesignCanvasState extends State<DesignCanvas> {
       c.checkpoint();
       d.recorded = true;
     }
-    final delta = _local(global) - d.pointer;
-    final raw = Rect.fromLTWH(
-      d.start.left,
-      d.start.top,
-      max(8, (d.start.width + delta.dx).roundToDouble()),
-      max(4, (d.start.height + delta.dy).roundToDouble()),
+    final raw = resizeRect(
+      d.start,
+      d.handle,
+      _local(global) - d.pointer,
+      keepAspect: HardwareKeyboard.instance.isShiftPressed,
     );
     final snapped = _snapOn
-        ? snapRect(raw, d.targets, snapTolerancePx / _view!.scale, resize: true)
+        ? snapRect(
+            raw,
+            d.targets,
+            snapTolerancePx / _view!.scale,
+            handle: d.handle,
+          )
         : SnapResult(raw, const []);
     c.setRects({d.id: snapped.rect}, record: false);
     setState(() => _lines = v.smartGuides ? snapped.lines : const []);
@@ -927,100 +934,137 @@ class _DesignCanvasState extends State<DesignCanvas> {
   }) {
     final primary = Theme.of(context).colorScheme.primary;
     final handle = 12 / scale;
+    // Nafasi ya ziada kuzunguka kipengele ili vishiko vilivyo nje ya mipaka
+    // yake viweze kubonyezwa (hit test haipiti nje ya mipaka ya mzazi).
+    final pad = handle;
+    final resizable = selected && single && !e.locked;
 
     return Positioned.fromRect(
-      rect: e.rect,
+      rect: e.rect.inflate(pad),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Positioned.fill(
-            child: MouseRegion(
-              onEnter: (_) => setState(() => _hoverId = e.id),
-              onExit: (_) {
-                if (_hoverId == e.id) setState(() => _hoverId = null);
-              },
-              cursor: e.locked
-                  ? SystemMouseCursors.basic
-                  : SystemMouseCursors.move,
-              child: GestureDetector(
-                supportedDevices: _editDevices,
-                onTap: () => _tapElement(pageIndex, e),
-                onPanStart: (d) => _beginMove(pageIndex, e, d.globalPosition),
-                onPanUpdate: (d) => _updateMove(d.globalPosition),
-                onPanEnd: (_) => _endDrag(),
-                child: ElementView(element: e),
-              ),
+            left: pad,
+            top: pad,
+            right: pad,
+            bottom: pad,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: MouseRegion(
+                    onEnter: (_) => setState(() => _hoverId = e.id),
+                    onExit: (_) {
+                      if (_hoverId == e.id) setState(() => _hoverId = null);
+                    },
+                    cursor: e.locked
+                        ? SystemMouseCursors.basic
+                        : SystemMouseCursors.move,
+                    child: GestureDetector(
+                      supportedDevices: _editDevices,
+                      onTap: () => _tapElement(pageIndex, e),
+                      onPanStart: (d) =>
+                          _beginMove(pageIndex, e, d.globalPosition),
+                      onPanUpdate: (d) => _updateMove(d.globalPosition),
+                      onPanEnd: (_) => _endDrag(),
+                      child: ElementView(element: e),
+                    ),
+                  ),
+                ),
+                if (selected) ...[
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: primary,
+                            width: (isKey ? 3 : 1.5) / scale,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (e.locked)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          padding: EdgeInsets.all(3 / scale),
+                          color: primary,
+                          child: Icon(
+                            AppIcons.lock,
+                            size: 12 / scale,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+                if (_alt && _hoverId == e.id && !selected)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: const Color(0xFFF04438),
+                            width: 1 / scale,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (selected) ...[
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: primary,
-                      width: (isKey ? 3 : 1.5) / scale,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (e.locked)
+          if (resizable)
+            for (final h in _handles)
               Positioned(
-                right: 0,
-                top: 0,
-                child: IgnorePointer(
-                  child: Container(
-                    padding: EdgeInsets.all(3 / scale),
-                    color: primary,
-                    child: Icon(
-                      AppIcons.lock,
-                      size: 12 / scale,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              )
-            else if (single)
-              Positioned(
-                right: -handle / 2,
-                bottom: -handle / 2,
+                left: pad + (h.x + 1) / 2 * e.rect.width - handle / 2,
+                top: pad + (h.y + 1) / 2 * e.rect.height - handle / 2,
                 width: handle,
                 height: handle,
                 child: GestureDetector(
                   supportedDevices: _editDevices,
-                  onPanStart: (d) => _beginResize(e, d.globalPosition),
+                  onPanStart: (d) => _beginResize(e, h, d.globalPosition),
                   onPanUpdate: (d) => _updateResize(d.globalPosition),
                   onPanEnd: (_) => _endDrag(),
                   child: MouseRegion(
-                    cursor: SystemMouseCursors.resizeDownRight,
+                    cursor: _resizeCursor(h),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: Colors.white,
+                        borderRadius: BorderRadius.circular(2 / scale),
                         border: Border.all(color: primary, width: 1.5 / scale),
                       ),
                     ),
                   ),
                 ),
               ),
-          ],
-          if (_alt && _hoverId == e.id && !selected)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFFF04438),
-                      width: 1 / scale,
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
+
+  /// Vishiko 8: kona 4 na katikati ya kila ukingo.
+  static const _handles = [
+    Alignment.topLeft,
+    Alignment.topCenter,
+    Alignment.topRight,
+    Alignment.centerRight,
+    Alignment.bottomRight,
+    Alignment.bottomCenter,
+    Alignment.bottomLeft,
+    Alignment.centerLeft,
+  ];
+
+  static MouseCursor _resizeCursor(Alignment h) => switch ((h.x, h.y)) {
+    (0, _) => SystemMouseCursors.resizeUpDown,
+    (_, 0) => SystemMouseCursors.resizeLeftRight,
+    (-1, -1) || (1, 1) => SystemMouseCursors.resizeUpLeftDownRight,
+    _ => SystemMouseCursors.resizeUpRightDownLeft,
+  };
 
   /// Guides za artboard ya sasa: mstari + eneo la kushika.
   List<Widget> _guides(CanvasTransform view) {
