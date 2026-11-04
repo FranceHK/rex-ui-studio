@@ -299,23 +299,23 @@ void main() {
     );
     await tester.tap(find.text('fungua'));
     await tester.pumpAndSettle();
-    expect(find.text('Design mpya'), findsOneWidget);
+    expect(find.text('New design'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, 'pixel 9 pro fold');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Pixel 9 Pro Fold').first);
     await tester.pumpAndSettle();
-    expect(find.text('Imefunguliwa'), findsOneWidget);
+    expect(find.text('Unfolded'), findsOneWidget);
     expect(find.textContaining('851 × 882 dp'), findsWidgets);
 
-    await tester.tap(find.text('Imekunjwa'));
+    await tester.tap(find.text('Folded'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('(makisio)'), findsWidgets);
+    expect(find.textContaining('(estimated)'), findsWidgets);
     expect(find.textContaining('1080 × 2424 px'), findsWidgets);
 
-    await tester.tap(find.text('Mlalo'));
+    await tester.tap(find.text('Landscape'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Tengeneza design'));
+    await tester.tap(find.text('Create design'));
     await tester.pumpAndSettle();
 
     final page = result!('e9');

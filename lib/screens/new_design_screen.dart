@@ -8,7 +8,7 @@ import '../icons/app_icons.dart';
 import '../models/ui_element.dart';
 import '../widgets/device_preview.dart';
 
-/// Inajenga artboard mpya ikipewa id.
+/// Builds a new artboard given an id.
 typedef ArtboardBuilder = DesignPage Function(String id);
 
 const _backgrounds = [
@@ -20,11 +20,11 @@ const _backgrounds = [
   Color(0xFFEEF2FF),
 ];
 
-/// Fungua dirisha la New Design. Linarudisha builder ya artboard au null.
+/// Opens the New Design dialog. Returns an artboard builder or null.
 Future<ArtboardBuilder?> showNewDesign(
   BuildContext context, {
   CustomPresetManager? manager,
-  String createLabel = 'Tengeneza design',
+  String createLabel = 'Create design',
 }) {
   return Navigator.of(context).push<ArtboardBuilder>(
     MaterialPageRoute(
@@ -35,13 +35,13 @@ Future<ArtboardBuilder?> showNewDesign(
   );
 }
 
-/// Dirisha la kuchagua kifaa na kutengeneza artboard mpya.
+/// The dialog for picking a device and creating a new artboard.
 class NewDesignScreen extends StatefulWidget {
   const NewDesignScreen({
     super.key,
     this.manager,
     this.repository,
-    this.createLabel = 'Tengeneza design',
+    this.createLabel = 'Create design',
   });
 
   final CustomPresetManager? manager;
@@ -117,7 +117,7 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
     _syncFields();
   }
 
-  /// Weka jina na ukubwa wa skrini iliyochaguliwa kwenye sehemu za kuandika.
+  /// Put the selected screen's name and size into the text fields.
   void _syncFields() {
     final (name, size) = switch (_custom) {
       final c? => (c.name, c.size),
@@ -128,7 +128,7 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
     _height.text = _fmt(size.height);
   }
 
-  /// Ukubwa ulioandikwa (wima); null kama si sahihi.
+  /// The typed size (portrait); null if invalid.
   Size? get _enteredSize {
     final w = double.tryParse(_width.text);
     final h = double.tryParse(_height.text);
@@ -178,7 +178,7 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
   void _create() {
     final builder = _builder;
     if (builder == null) {
-      _snack('Weka upana na urefu sahihi (50–8000).');
+      _snack('Enter a valid width and height (50–8000).');
       return;
     }
     if (_preset case final p?) manager.markUsed(p.id);
@@ -188,7 +188,7 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
   Future<void> _saveCustom() async {
     final size = _enteredSize;
     if (size == null) {
-      _snack('Weka upana na urefu sahihi (50–8000).');
+      _snack('Enter a valid width and height (50–8000).');
       return;
     }
     final name = _name.text.trim().isEmpty
@@ -197,7 +197,7 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
     final saved = await manager.addCustom(name, size, basedOn: _preset?.id);
     if (!mounted) return;
     _selectCustom(saved);
-    _snack('Preset "$name" imehifadhiwa');
+    _snack('Preset "$name" saved');
   }
 
   void _snack(String msg) => ScaffoldMessenger.of(context)
@@ -239,7 +239,7 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
                   const TabBar(
                     tabs: [
                       Tab(text: 'Preview'),
-                      Tab(text: 'Maelezo'),
+                      Tab(text: 'Details'),
                     ],
                   ),
                   Expanded(child: TabBarView(children: [center, right])),
@@ -256,9 +256,9 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
           children: [
             const TabBar(
               tabs: [
-                Tab(text: 'Vifaa'),
+                Tab(text: 'Devices'),
                 Tab(text: 'Preview'),
-                Tab(text: 'Maelezo'),
+                Tab(text: 'Details'),
               ],
             ),
             Expanded(child: TabBarView(children: [left, center, right])),
@@ -278,12 +278,12 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
           backgroundColor: scheme.surface,
           surfaceTintColor: Colors.transparent,
           leading: IconButton(
-            tooltip: 'Funga',
+            tooltip: 'Close',
             icon: const Icon(AppIcons.close),
             onPressed: () => Navigator.of(context).pop(),
           ),
           title: const Text(
-            'Design mpya',
+            'New design',
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           bottom: const PreferredSize(
@@ -301,7 +301,7 @@ class _NewDesignScreenState extends State<NewDesignScreen> {
 String _fmt(double v) =>
     v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
 
-// ---------------- Kushoto: watengenezaji, familia, modeli ----------------
+// ---------------- Left: manufacturers, families, models ----------------
 
 class _LeftPanel extends StatelessWidget {
   const _LeftPanel({required this.state});
@@ -331,12 +331,12 @@ class _LeftPanel extends StatelessWidget {
               onChanged: s.setQuery,
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Tafuta kifaa… (k.m. s25 ultra, fold)',
+                hintText: 'Search devices… (e.g. s25 ultra, fold)',
                 prefixIcon: const Icon(AppIcons.search, size: 20),
                 suffixIcon: s.query.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Futa utafutaji',
+                        tooltip: 'Clear search',
                         icon: const Icon(AppIcons.close, size: 18),
                         onPressed: () {
                           state._searchText.clear();
@@ -355,15 +355,15 @@ class _LeftPanel extends StatelessWidget {
               showSelectedIcon: false,
               style: const ButtonStyle(visualDensity: VisualDensity.compact),
               segments: const [
-                ButtonSegment(value: PresetSource.all, label: Text('Zote')),
+                ButtonSegment(value: PresetSource.all, label: Text('All')),
                 ButtonSegment(
                   value: PresetSource.favorites,
-                  label: Text('Vipendwa'),
+                  label: Text('Favorites'),
                   icon: Icon(AppIcons.star, size: 16),
                 ),
                 ButtonSegment(
                   value: PresetSource.recents,
-                  label: Text('Karibuni'),
+                  label: Text('Recent'),
                   icon: Icon(AppIcons.clock, size: 16),
                 ),
               ],
@@ -381,7 +381,7 @@ class _LeftPanel extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: ChoiceChip(
-                      label: Text(m?.label ?? 'Wote'),
+                      label: Text(m?.label ?? 'All'),
                       selected: s.manufacturer == m,
                       showCheckmark: false,
                       onSelected: (_) => s.setManufacturer(m),
@@ -401,14 +401,14 @@ class _LeftPanel extends StatelessWidget {
                     isExpanded: true,
                     isDense: true,
                     decoration: InputDecoration(
-                      labelText: 'Familia',
+                      labelText: 'Family',
                       isDense: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem(child: Text('Familia zote')),
+                      const DropdownMenuItem(child: Text('All families')),
                       for (final f in s.families)
                         DropdownMenuItem(value: f, child: Text(f)),
                     ],
@@ -419,7 +419,7 @@ class _LeftPanel extends StatelessWidget {
                 FilterChip(
                   label: const Text('Fold'),
                   avatar: const Icon(AppIcons.foldable, size: 16),
-                  tooltip: 'Zinazokunjika tu',
+                  tooltip: 'Foldables only',
                   selected: s.foldableOnly,
                   showCheckmark: false,
                   onSelected: s.setFoldableOnly,
@@ -430,7 +430,7 @@ class _LeftPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
             child: Text(
-              '${results.length} vifaa',
+              '${results.length} devices',
               style: TextStyle(fontSize: 12, color: scheme.outline),
             ),
           ),
@@ -441,7 +441,7 @@ class _LeftPanel extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 16),
                     children: [
                       if (showCustom) ...[
-                        const _GroupHeader('Preset zako'),
+                        const _GroupHeader('Your presets'),
                         for (final c in state.manager.custom)
                           _CustomTile(state: state, preset: c),
                       ],
@@ -494,9 +494,9 @@ class _EmptyResults extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final msg = switch (source) {
-      PresetSource.favorites => 'Bado huna vipendwa. Bonyeza ★ kwenye kifaa.',
-      PresetSource.recents => 'Vifaa utakavyotumia vitaonekana hapa.',
-      PresetSource.all => 'Hakuna kifaa kinacholingana.',
+      PresetSource.favorites => 'No favorites yet. Tap ★ on a device.',
+      PresetSource.recents => 'Devices you use will show up here.',
+      PresetSource.all => 'No matching devices.',
     };
     return Center(
       child: Padding(
@@ -542,11 +542,11 @@ class _PresetTile extends StatelessWidget {
         subtitle: Text(
           '${d.diagonal == null ? '' : '${d.diagonal}" · '}'
           '${_fmt(size.width)}×${_fmt(size.height)} $unit'
-          '${d.logicalVerified ? '' : ' (makisio)'}'
-          '${preset.foldable ? ' · ${preset.displays.length} skrini' : ''}',
+          '${d.logicalVerified ? '' : ' (estimated)'}'
+          '${preset.foldable ? ' · ${preset.displays.length} screens' : ''}',
         ),
         trailing: IconButton(
-          tooltip: fav ? 'Ondoa kwenye vipendwa' : 'Weka kwenye vipendwa',
+          tooltip: fav ? 'Remove from favorites' : 'Add to favorites',
           icon: Icon(
             fav ? Icons.star_rounded : Icons.star_outline_rounded,
             color: fav ? const Color(0xFFF59E0B) : scheme.outline,
@@ -580,10 +580,10 @@ class _CustomTile extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          '${_fmt(preset.size.width)}×${_fmt(preset.size.height)} · maalum',
+          '${_fmt(preset.size.width)}×${_fmt(preset.size.height)} · custom',
         ),
         trailing: IconButton(
-          tooltip: 'Futa preset',
+          tooltip: 'Delete preset',
           icon: const Icon(AppIcons.trash, size: 18),
           onPressed: () {
             if (state._custom?.id == preset.id) {
@@ -598,7 +598,7 @@ class _CustomTile extends StatelessWidget {
   }
 }
 
-// ---------------- Katikati: preview ----------------
+// ---------------- Center: preview ----------------
 
 class _CenterPanel extends StatelessWidget {
   const _CenterPanel({required this.state});
@@ -630,12 +630,12 @@ class _CenterPanel extends StatelessWidget {
                 segments: const [
                   ButtonSegment(
                     value: false,
-                    label: Text('Wima'),
+                    label: Text('Portrait'),
                     icon: Icon(AppIcons.phone, size: 16),
                   ),
                   ButtonSegment(
                     value: true,
-                    label: Text('Mlalo'),
+                    label: Text('Landscape'),
                     icon: Icon(AppIcons.rotate, size: 16),
                   ),
                 ],
@@ -653,8 +653,8 @@ class _CenterPanel extends StatelessWidget {
                                     .firstWhere((d) => !d.role.folded)
                                     .role ==
                                 DisplayRole.inner
-                            ? 'Imefunguliwa'
-                            : 'Kuu',
+                            ? 'Unfolded'
+                            : 'Main',
                       ),
                     ),
                     ButtonSegment(
@@ -662,7 +662,7 @@ class _CenterPanel extends StatelessWidget {
                       label: Text(
                         preset.displays.any((d) => d.role == DisplayRole.cover)
                             ? 'Cover'
-                            : 'Imekunjwa',
+                            : 'Folded',
                       ),
                     ),
                   ],
@@ -729,7 +729,7 @@ class _CenterPanel extends StatelessWidget {
                 Text(
                   '${_fmt(state.orientation.apply(display.physical).width)} × '
                   '${_fmt(state.orientation.apply(display.physical).height)} px '
-                  'halisi · ${display.role.label}',
+                  'physical · ${display.role.label}',
                   style: TextStyle(fontSize: 12, color: scheme.outline),
                 ),
             ],
@@ -755,7 +755,7 @@ class _ToggleChip extends StatelessWidget {
       FilterChip(label: Text(label), selected: value, onSelected: onChanged);
 }
 
-// ---------------- Kulia: maelezo ya kifaa ----------------
+// ---------------- Right: device details ----------------
 
 class _RightPanel extends StatelessWidget {
   const _RightPanel({required this.state});
@@ -768,7 +768,7 @@ class _RightPanel extends StatelessWidget {
     final preset = state._preset;
     final d = state._display;
     final custom = state._custom;
-    const unknown = 'Haijulikani';
+    const unknown = 'Unknown';
 
     String? diag(double? v) => v == null ? null : '$v"';
 
@@ -795,13 +795,13 @@ class _RightPanel extends StatelessWidget {
               ],
             )
           else
-            const _Badge('Preset yako'),
+            const _Badge('Your preset'),
           const SizedBox(height: 18),
           TextField(
             controller: state._name,
             onChanged: (_) => state._changed(),
             decoration: const InputDecoration(
-              labelText: 'Jina la artboard',
+              labelText: 'Artboard name',
               isDense: true,
             ),
           ),
@@ -811,7 +811,7 @@ class _RightPanel extends StatelessWidget {
               Expanded(
                 child: _NumberField(
                   controller: state._width,
-                  label: 'Upana',
+                  label: 'Width',
                   onChanged: state._changed,
                 ),
               ),
@@ -822,7 +822,7 @@ class _RightPanel extends StatelessWidget {
               Expanded(
                 child: _NumberField(
                   controller: state._height,
-                  label: 'Urefu',
+                  label: 'Height',
                   onChanged: state._changed,
                 ),
               ),
@@ -831,35 +831,35 @@ class _RightPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              'Ukubwa wa kimantiki ukiwa wima. Ukibadilisha, metadata ya '
-              'kifaa inabaki.',
+              'Logical size in portrait. If you change it, the device '
+              'metadata stays.',
               style: TextStyle(fontSize: 11, color: scheme.outline),
             ),
           ),
           if (d != null && !d.logicalVerified)
             _Warning(
-              'Ukubwa wa kimantiki (dp) wa skrini hii haujathibitishwa. '
-              '${d.logicalSource}. Hakiki kabla ya kutumia kwa vipimo kamili.',
+              'The logical size (dp) of this screen is not verified. '
+              '${d.logicalSource}. Check it before relying on exact measurements.',
             ),
           if (preset != null && d != null) ...[
             const SizedBox(height: 18),
-            const _SectionTitle('Skrini'),
-            _Row('Skrini', d.role.label),
+            const _SectionTitle('Screen'),
+            _Row('Screen', d.role.label),
             _Row(
-              'Ukubwa',
+              'Size',
               diag(d.diagonal) ?? unknown,
               ok: d.isVerified('diagonal'),
             ),
             _Row(
-              'Resolution halisi',
+              'Physical resolution',
               '${_fmt(d.physical.width)} × ${_fmt(d.physical.height)} px',
               ok: d.isVerified('physical'),
             ),
             _Row(
-              'Ukubwa wa kimantiki',
+              'Logical size',
               '${_fmt(d.artboard.width)} × ${_fmt(d.artboard.height)} '
                   '${preset.logicalUnit.label}'
-                  '${d.logicalVerified ? '' : ' (makisio)'}',
+                  '${d.logicalVerified ? '' : ' (estimated)'}',
               ok: d.logicalVerified,
             ),
             _Row(
@@ -872,8 +872,8 @@ class _RightPanel extends StatelessWidget {
               ok: d.scale != null,
             ),
             _Row(
-              'Density ya skrini',
-              d.ppi == null ? unknown : '${_fmt(d.ppi!)} ppi (pixel halisi)',
+              'Screen density',
+              d.ppi == null ? unknown : '${_fmt(d.ppi!)} ppi (physical pixels)',
               ok: d.isVerified('ppi'),
             ),
             _Row(
@@ -881,27 +881,30 @@ class _RightPanel extends StatelessWidget {
               d.refresh ?? unknown,
               ok: d.isVerified('refresh'),
             ),
-            _Row('Aina ya skrini', d.type ?? unknown, ok: d.isVerified('type')),
-            _Row('Mwelekeo', state.orientation.landscape ? 'Mlalo' : 'Wima'),
+            _Row('Panel type', d.type ?? unknown, ok: d.isVerified('type')),
+            _Row(
+              'Orientation',
+              state.orientation.landscape ? 'Landscape' : 'Portrait',
+            ),
             _Row(
               'Safe area',
               d.safeArea == null
                   ? unknown
-                  : 'juu ${_fmt(d.safeArea!.top)} · chini '
+                  : 'top ${_fmt(d.safeArea!.top)} · bottom '
                         '${_fmt(d.safeArea!.bottom)}'
-                        '${d.safeAreaVerified ? '' : ' (mwongozo)'}',
+                        '${d.safeAreaVerified ? '' : ' (guide)'}',
               ok: d.safeAreaVerified,
             ),
             if (d.cutouts.isNotEmpty)
               _Row(
                 'Cutouts',
-                '${d.cutouts.length} (kamera)',
+                '${d.cutouts.length} (camera)',
                 ok: d.isVerified('cutouts'),
               ),
-            if (d.logicalSource case final src?) _Row('Chanzo cha frame', src),
+            if (d.logicalSource case final src?) _Row('Frame source', src),
           ],
           const SizedBox(height: 18),
-          const _SectionTitle('Rangi ya background'),
+          const _SectionTitle('Background color'),
           Wrap(
             spacing: 8,
             children: [
@@ -932,7 +935,7 @@ class _RightPanel extends StatelessWidget {
           ),
           if (preset != null) ...[
             const SizedBox(height: 18),
-            const _SectionTitle('Chanzo rasmi'),
+            const _SectionTitle('Official source'),
             SelectableText(
               preset.sourceUrl,
               style: TextStyle(fontSize: 12, color: scheme.primary),
@@ -974,7 +977,7 @@ class _Row extends StatelessWidget {
   final String label;
   final String value;
 
-  /// false = thamani haijathibitishwa.
+  /// false = the value is not verified.
   final bool ok;
 
   @override
@@ -1003,7 +1006,7 @@ class _Row extends StatelessWidget {
           ),
           if (!ok)
             Tooltip(
-              message: 'Haijathibitishwa',
+              message: 'Not verified',
               child: Icon(AppIcons.error, size: 15, color: scheme.tertiary),
             ),
         ],
@@ -1099,7 +1102,7 @@ class _NumberField extends StatelessWidget {
   );
 }
 
-// ---------------- Chini: vitendo ----------------
+// ---------------- Bottom: actions ----------------
 
 class _BottomBar extends StatelessWidget {
   const _BottomBar({required this.state});
@@ -1122,13 +1125,13 @@ class _BottomBar extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Ghairi'),
+                child: const Text('Cancel'),
               ),
               const Spacer(),
               OutlinedButton.icon(
                 onPressed: valid ? state._saveCustom : null,
                 icon: const Icon(AppIcons.add, size: 18),
-                label: const Text('Hifadhi preset'),
+                label: const Text('Save preset'),
               ),
               const SizedBox(width: 10),
               FilledButton.icon(
