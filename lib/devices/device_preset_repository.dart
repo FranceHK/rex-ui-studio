@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'device_preset.dart';
 import 'phone_catalog.dart';
 
-/// Preset ya mtumiaji: jina na ukubwa wa kimantiki (wima).
+/// A user preset: a name and a logical size (portrait).
 class CustomPreset {
   const CustomPreset({
     required this.id,
@@ -19,7 +19,7 @@ class CustomPreset {
   final String name;
   final Size size;
 
-  /// Id ya preset ya katalogi iliyotumika kama msingi (kama ipo).
+  /// Id of the catalog preset used as the base (if any).
   final String? basedOn;
 
   Map<String, dynamic> toJson() => {
@@ -40,7 +40,7 @@ class CustomPreset {
   }
 }
 
-/// Inafikia katalogi ya simu kwa urahisi.
+/// Easy access to the phone catalog.
 class DevicePresetRepository {
   DevicePresetRepository([List<DevicePreset>? presets])
     : presets = presets ?? phoneCatalog;
@@ -56,7 +56,7 @@ class DevicePresetRepository {
   List<DevicePreset> byManufacturer(Manufacturer m) =>
       presets.where((p) => p.manufacturer == m).toList();
 
-  /// Familia za mtengenezaji kwa mpangilio wa katalogi (mpya kwanza).
+  /// A manufacturer's families in catalog order (newest first).
   List<String> families(Manufacturer? m) => {
     for (final p in presets)
       if (m == null || p.manufacturer == m) p.family,
@@ -66,8 +66,8 @@ class DevicePresetRepository {
       presets.where((p) => p.foldable).fold(0, (n, p) => n + p.displays.length);
 }
 
-/// Favorites, zilizotumika karibuni na preset za mtumiaji. Zinahifadhiwa
-/// kwa shared_preferences kama miradi.
+/// Favorites, recently used and user presets. Stored with
+/// shared_preferences like projects.
 class CustomPresetManager extends ChangeNotifier {
   static const _key = 'rexa_ui_studio.device_presets.v1';
   static const maxRecents = 8;
@@ -89,7 +89,7 @@ class CustomPresetManager extends ChangeNotifier {
         favorites = [...(json['favorites'] as List? ?? const []).cast()];
         recents = [...(json['recents'] as List? ?? const []).cast()];
       } catch (_) {
-        // Data mbovu: anza upya bila kuharibu app
+        // Bad data: start over without breaking the app
       }
     }
     loaded = true;
@@ -142,10 +142,10 @@ class CustomPresetManager extends ChangeNotifier {
   }
 }
 
-/// Orodha ya kushoto ya New Design inaonyesha nini.
+/// What the New Design list on the left shows.
 enum PresetSource { all, favorites, recents }
 
-/// Utafutaji na vichujio vya katalogi.
+/// Catalog search and filters.
 class DeviceSearchController extends ChangeNotifier {
   DeviceSearchController(this.repository, this.manager) {
     manager.addListener(notifyListeners);
@@ -188,7 +188,7 @@ class DeviceSearchController extends ChangeNotifier {
 
   List<String> get families => repository.families(manufacturer);
 
-  /// Matokeo kulingana na vichujio vyote.
+  /// Results matching all filters.
   List<DevicePreset> get results {
     Iterable<DevicePreset> list = switch (source) {
       PresetSource.all => repository.presets,
@@ -209,7 +209,7 @@ class DeviceSearchController extends ChangeNotifier {
     return list.toList();
   }
 
-  /// Kila neno la utafutaji lazima lionekane (k.m. "s25 ultra", "fold 7").
+  /// Every search word must appear (e.g. "s25 ultra", "fold 7").
   static bool matches(DevicePreset p, String query) {
     final text = p.searchText.toLowerCase();
     final compact = text.replaceAll(' ', '');
