@@ -577,13 +577,13 @@ void main() {
 
     // Uwanja mzima: paneli zote mbili zinakunjwa, kisha zinarudi
     await tester.tap(
-      find.byTooltip('Uwanja mzima — kunja paneli (Cmd/Ctrl + \\)'),
+      find.byTooltip('Full canvas — collapse panels (Cmd/Ctrl + \\)'),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Sifa'), findsNothing);
+    expect(find.text('Properties'), findsNothing);
     final wide = tester.getSize(canvas).width;
     expect(wide, greaterThan(full + 500));
-    await tester.tap(find.byTooltip('Rudisha paneli (Cmd/Ctrl + \\)'));
+    await tester.tap(find.byTooltip('Show panels (Cmd/Ctrl + \\)'));
     await tester.pumpAndSettle();
     expect(tester.getSize(canvas).width, full);
   });

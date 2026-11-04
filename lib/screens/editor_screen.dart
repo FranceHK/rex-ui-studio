@@ -17,10 +17,10 @@ import 'run_screen.dart';
 import '../widgets/properties_panel.dart';
 import '../widgets/side_panel.dart';
 
-/// Skrini ya kubuni mradi mmoja.
-///  - pana (≥ 1150): navigation bar + paneli zote mbili zinaonekana
-///  - tablet (720–1149): navigation bar inakuwa drawer
-///  - nyembamba (< 720): paneli zote mbili ni drawers
+/// The design screen for one project.
+///  - wide (≥ 1150): navigation bar + both panels visible
+///  - tablet (720–1149): the navigation bar becomes a drawer
+///  - narrow (< 720): both panels are drawers
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key, required this.project, required this.storage});
 
@@ -40,8 +40,8 @@ class _EditorScreenState extends State<EditorScreen> {
 
   _SaveState _saveState = _SaveState.loading;
 
-  /// Paneli za kushoto na kulia zimefunguliwa (zikikunjwa, canvas
-  /// inapata nafasi zaidi).
+  /// Whether the left and right panels are open (collapsed, the canvas
+  /// gets more room).
   bool _leftOpen = true;
   bool _rightOpen = true;
 
@@ -51,7 +51,7 @@ class _EditorScreenState extends State<EditorScreen> {
   void _toggleLeft() => setState(() => _leftOpen = !_leftOpen);
   void _toggleRight() => setState(() => _rightOpen = !_rightOpen);
 
-  /// Uwanja mzima: kunja paneli zote mbili, au zifungue tena.
+  /// Full canvas: collapse both panels, or open them again.
   void _toggleFocusCanvas() {
     final open = !(_leftOpen || _rightOpen);
     setState(() => _leftOpen = _rightOpen = open);
@@ -67,13 +67,13 @@ class _EditorScreenState extends State<EditorScreen> {
     _restore();
   }
 
-  /// Fungua mradi uliohifadhiwa, kisha hifadhi kila mabadiliko.
+  /// Open the saved project, then save every change.
   Future<void> _restore() async {
     try {
       final saved = await _storage.load(widget.project.id);
       if (saved != null) c.loadJson(saved);
     } on FormatException {
-      // Mradi ulioharibika: anza na skrini tupu badala ya kukwama
+      // Corrupt project: start with an empty screen instead of getting stuck
     }
     if (!mounted) return;
     setState(() => _saveState = _SaveState.saved);
@@ -99,7 +99,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
-    // Hifadhi mabadiliko ya mwisho kabla ya kufunga
+    // Save the last changes before closing
     if (_saveTimer?.isActive ?? false) {
       _saveTimer!.cancel();
       _storage.save(widget.project.id, c.toJson());
@@ -137,7 +137,7 @@ class _EditorScreenState extends State<EditorScreen> {
     const SingleActivator(LogicalKeyboardKey.keyA, meta: true): c.selectAll,
     const SingleActivator(LogicalKeyboardKey.keyA, control: true): c.selectAll,
     const SingleActivator(LogicalKeyboardKey.escape): () => c.select(null),
-    // Alignment (kama Figma): Alt + A/H/D/W/V/S, Alt + C = katikati
+    // Alignment (like Figma): Alt + A/H/D/W/V/S, Alt + C = center
     for (final (key, op) in [
       (LogicalKeyboardKey.keyA, AlignOp.left),
       (LogicalKeyboardKey.keyH, AlignOp.hCenter),
@@ -148,7 +148,7 @@ class _EditorScreenState extends State<EditorScreen> {
       (LogicalKeyboardKey.keyC, AlignOp.centerBoth),
     ])
       SingleActivator(key, alt: true): () => c.align(op),
-    // Mwonekano
+    // View
     const SingleActivator(LogicalKeyboardKey.keyR, shift: true): () =>
         _toggleView((v) => v.copyWith(showRulers: !v.showRulers)),
     for (final mod in [(true, false), (false, true)]) ...{
@@ -185,9 +185,9 @@ class _EditorScreenState extends State<EditorScreen> {
     },
   };
 
-  /// Mtumiaji anaandika kwenye TextField (jina, X/Y, upana, utafutaji…)?
-  /// Hapo Backspace/Delete/mishale ni za maandishi, si za kufuta au
-  /// kusogeza kipengele.
+  /// Is the user typing in a TextField (name, X/Y, width, search…)?
+  /// Then Backspace/Delete/arrows edit the text instead of deleting or
+  /// moving the element.
   static bool get isTyping {
     final ctx = FocusManager.instance.primaryFocus?.context;
     if (ctx == null) return false;
@@ -213,7 +213,7 @@ class _EditorScreenState extends State<EditorScreen> {
   void _toggleView(ViewSettings Function(ViewSettings) change) =>
       c.setView(change(c.view));
 
-  /// Jaribu muundo kama app (prototype).
+  /// Try the design as an app (prototype).
   void _run() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -233,7 +233,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Jina la mradi'),
+        title: const Text('Project name'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -242,11 +242,11 @@ class _EditorScreenState extends State<EditorScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Ghairi'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, ctrl.text),
-            child: const Text('Hifadhi'),
+            child: const Text('Save'),
           ),
         ],
       ),
@@ -261,7 +261,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final json = const JsonEncoder.withIndent('  ').convert(c.toJson());
     await Clipboard.setData(ClipboardData(text: json));
     _toast(
-      'Mradi (JSON) umenakiliwa — ubandike kwenye faili au tuma kwa mtu ✓',
+      'Project JSON copied — paste it into a file or send it to someone ✓',
     );
   }
 
@@ -270,7 +270,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final text = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Leta mradi (JSON)'),
+        title: const Text('Import project (JSON)'),
         content: SizedBox(
           width: 560,
           child: TextField(
@@ -279,18 +279,18 @@ class _EditorScreenState extends State<EditorScreen> {
             autofocus: true,
             style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5),
             decoration: const InputDecoration(
-              hintText: 'Bandika hapa JSON uliyohamisha awali...',
+              hintText: 'Paste the JSON you exported earlier...',
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Ghairi'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, input.text),
-            child: const Text('Leta'),
+            child: const Text('Import'),
           ),
         ],
       ),
@@ -300,9 +300,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
     try {
       c.loadJson(jsonDecode(text) as Map<String, dynamic>, record: true);
-      _toast('Mradi umeletwa: skrini ${c.pages.length} ✓');
+      _toast('Project imported: ${c.pages.length} screens ✓');
     } catch (_) {
-      _toast('Imeshindikana: JSON hii si mradi wa Rexa UI Studio');
+      _toast('Failed: this JSON is not a Rexa UI Studio project');
     }
   }
 
@@ -331,7 +331,7 @@ class _EditorScreenState extends State<EditorScreen> {
               appBar: AppBar(
                 leading: showLeft
                     ? IconButton(
-                        tooltip: 'Miradi yote',
+                        tooltip: 'All projects',
                         icon: const Icon(AppIcons.back),
                         onPressed: () => Navigator.pop(context),
                       )
@@ -387,14 +387,14 @@ class _EditorScreenState extends State<EditorScreen> {
                         value: () => Navigator.pop(context),
                         child: const ListTile(
                           leading: Icon(AppIcons.back),
-                          title: Text('Rudi kwenye miradi yote'),
+                          title: Text('Back to all projects'),
                         ),
                       ),
                       PopupMenuItem(
                         value: _rename,
                         child: const ListTile(
                           leading: Icon(AppIcons.edit),
-                          title: Text('Badilisha jina la mradi'),
+                          title: Text('Rename project'),
                         ),
                       ),
                       PopupMenuItem(
@@ -409,30 +409,30 @@ class _EditorScreenState extends State<EditorScreen> {
                         value: _exportJson,
                         child: const ListTile(
                           leading: Icon(AppIcons.export),
-                          title: Text('Hamisha mradi (nakili JSON)'),
+                          title: Text('Export project (copy JSON)'),
                         ),
                       ),
                       PopupMenuItem(
                         value: _importJson,
                         child: const ListTile(
                           leading: Icon(AppIcons.import),
-                          title: Text('Leta mradi (bandika JSON)'),
+                          title: Text('Import project (paste JSON)'),
                         ),
                       ),
                     ],
                   ),
                   IconButton(
-                    tooltip: 'Mipangilio (kalamu, gridi, rulers, snapping)',
+                    tooltip: 'Settings (pen, grid, rulers, snapping)',
                     onPressed: () => showCanvasSettings(context, c),
                     icon: const Icon(AppIcons.settings),
                   ),
                   IconButton(
-                    tooltip: 'Rudisha nyuma (Cmd+Z)',
+                    tooltip: 'Undo (Cmd+Z)',
                     onPressed: c.canUndo ? c.undo : null,
                     icon: const Icon(AppIcons.undo),
                   ),
                   IconButton(
-                    tooltip: 'Rudia (Cmd+Shift+Z)',
+                    tooltip: 'Redo (Cmd+Shift+Z)',
                     onPressed: c.canRedo ? c.redo : null,
                     icon: const Icon(AppIcons.redo),
                   ),
@@ -446,13 +446,13 @@ class _EditorScreenState extends State<EditorScreen> {
                   FilledButton.icon(
                     onPressed: _showCode,
                     icon: const Icon(AppIcons.code, size: 18),
-                    label: const Text('Toa code'),
+                    label: const Text('Get code'),
                   ),
                   if (showLeft && showRight)
                     IconButton(
                       tooltip: focused
-                          ? 'Rudisha paneli (Cmd/Ctrl + \\)'
-                          : 'Uwanja mzima — kunja paneli (Cmd/Ctrl + \\)',
+                          ? 'Show panels (Cmd/Ctrl + \\)'
+                          : 'Full canvas — collapse panels (Cmd/Ctrl + \\)',
                       isSelected: focused,
                       onPressed: _toggleFocusCanvas,
                       icon: const Icon(AppIcons.focusCanvas),
@@ -460,7 +460,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   if (!showRight)
                     Builder(
                       builder: (context) => IconButton(
-                        tooltip: 'Sifa',
+                        tooltip: 'Properties',
                         icon: const Icon(AppIcons.properties),
                         onPressed: () => Scaffold.of(context).openEndDrawer(),
                       ),
@@ -497,8 +497,8 @@ class _EditorScreenState extends State<EditorScreen> {
                       child: _Panel(
                         child: Listener(
                           onPointerDown: (_) => _focus.requestFocus(),
-                          // Kalamu ikigusa nje ya kisanduku, TextField
-                          // inaondoa focus baada ya pointer down — irudishe.
+                          // When the pen taps outside a text box, the TextField
+                          // drops focus after pointer down — take it back.
                           onPointerUp: (_) => _focus.requestFocus(),
                           child: DesignCanvas(controller: c),
                         ),
@@ -524,7 +524,7 @@ class _EditorScreenState extends State<EditorScreen> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            'Sifa',
+                                            'Properties',
                                             style: TextStyle(
                                               fontWeight: FontWeight.w600,
                                               color: scheme.outline,
@@ -532,7 +532,7 @@ class _EditorScreenState extends State<EditorScreen> {
                                           ),
                                         ),
                                         IconButton(
-                                          tooltip: 'Kunja paneli',
+                                          tooltip: 'Collapse panel',
                                           icon: const Icon(AppIcons.panelRight),
                                           onPressed: _toggleRight,
                                         ),
@@ -546,12 +546,12 @@ class _EditorScreenState extends State<EditorScreen> {
                                 children: [
                                   const SizedBox(height: 6),
                                   IconButton(
-                                    tooltip: 'Funua paneli ya sifa',
+                                    tooltip: 'Expand properties panel',
                                     icon: const Icon(AppIcons.panelRight),
                                     onPressed: _toggleRight,
                                   ),
                                   IconButton(
-                                    tooltip: 'Sifa',
+                                    tooltip: 'Properties',
                                     icon: const Icon(AppIcons.properties),
                                     onPressed: _toggleRight,
                                   ),
@@ -579,8 +579,8 @@ class _SaveIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final (icon, label, color) = switch (state) {
-      _SaveState.loading => (AppIcons.clock, 'Inafungua…', scheme.outline),
-      _SaveState.saving => (AppIcons.saving, 'Inahifadhi…', scheme.outline),
+      _SaveState.loading => (AppIcons.clock, 'Opening…', scheme.outline),
+      _SaveState.saving => (AppIcons.saving, 'Saving…', scheme.outline),
       _SaveState.saved => (AppIcons.saved, 'Imehifadhiwa', scheme.outline),
       _SaveState.error => (AppIcons.error, 'Haijahifadhiwa', scheme.error),
     };
@@ -595,12 +595,12 @@ class _SaveIndicator extends StatelessWidget {
   }
 }
 
-/// Nafasi kati ya paneli na kingo za dirisha.
+/// Space between the panels and the window edges.
 const _gap = 8.0;
 
-/// Paneli "inayoelea": kona za mviringo, mpaka mwembamba na kivuli kidogo.
-/// [collapsible] = true: upana unafuata [width] (au upana wa asili wa
-/// maudhui ikiwa null, k.m. paneli iliyokunjwa) kwa animation.
+/// A "floating" panel: rounded corners, a thin border and a soft shadow.
+/// [collapsible] = true: the width animates to [width] (or the content's
+/// intrinsic width when null, e.g. a collapsed panel).
 class _Panel extends StatelessWidget {
   const _Panel({required this.child, this.width, this.collapsible = false});
 
@@ -630,8 +630,8 @@ class _Panel extends StatelessWidget {
       ),
     );
     if (!collapsible) return panel;
-    // AnimatedSize inapanga maudhui kwa upana wa mwisho na kuyakata wakati
-    // wa animation, kwa hiyo hayabanwi wala kuzidi mipaka.
+    // AnimatedSize lays the content out at its final width and clips it
+    // during the animation, so it is never squeezed or overflows.
     return AnimatedSize(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,

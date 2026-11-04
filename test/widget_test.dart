@@ -50,7 +50,7 @@ void main() {
 
     // Kurudi kwenye ukurasa wa mwanzo kunaonyesha mradi uliohifadhiwa
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.byTooltip('Miradi yote'));
+    await tester.tap(find.byTooltip('All projects'));
     await tester.pumpAndSettle();
     expect(find.text('App ya Benki'), findsOneWidget);
     expect(find.textContaining('1 screen · Galaxy S25'), findsOneWidget);
