@@ -57,6 +57,9 @@ abstract final class AppIcons {
   static const error = AmazingIconBroken.danger;
   static const properties = AmazingIconBroken.setting4;
   static const settings = AmazingIconBroken.setting2;
+  static const panelLeft = AmazingIconBroken.sidebarLeft;
+  static const panelRight = AmazingIconBroken.sidebarRight;
+  static const focusCanvas = AmazingIconBroken.maximize1;
   static const pen = AmazingIconBroken.penTool;
   static const more = AmazingIconBroken.more;
   static const clock = AmazingIconBroken.clock;
