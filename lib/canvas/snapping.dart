@@ -5,12 +5,12 @@ import 'package:flutter/painting.dart' show Alignment, Axis;
 
 import 'geometry.dart';
 
-/// Sababu ya snap (inaamua rangi/mtindo wa mstari wa muda).
+/// Why something snapped (decides the color/style of the temporary line).
 enum SnapKind { object, artboard, guide, grid, spacing }
 
-/// Mstari wa muda unaoonyeshwa wakati wa kusogeza. Kwa [Axis.vertical]
-/// mstari uko kwenye X = [position] kutoka Y = [start] hadi [end].
-/// Vipimo vyote viko kwenye nafasi ya artboard.
+/// A temporary line shown while moving. For [Axis.vertical] the line
+/// is at X = [position] from Y = [start] to [end].
+/// All measurements are in artboard coordinates.
 class SnapLine {
   const SnapLine(this.axis, this.position, this.start, this.end, this.kind);
   final Axis axis;
@@ -20,7 +20,7 @@ class SnapLine {
   final SnapKind kind;
 }
 
-/// Kipimo cha umbali kati ya nukta [a] na [b] (nafasi ya artboard).
+/// A distance measurement between points [a] and [b] (artboard coordinates).
 class Measure {
   const Measure(this.a, this.b);
   final Offset a;
@@ -35,9 +35,9 @@ class _Candidate {
   final Rect? source;
 }
 
-/// Malengo ya snapping yaliyohesabiwa mara moja mwanzoni mwa kusogeza
-/// (cache). Kila harakati inatafuta kwa binary search, si kwa kupitia
-/// vipengele vyote.
+/// Snapping targets computed once at the start of a move (cached).
+/// Each movement uses a binary search instead of walking every
+/// element.
 class SnapTargets {
   SnapTargets({
     required this.artboard,
@@ -93,7 +93,7 @@ class SnapTargets {
   final Size artboard;
   final List<Rect> others;
 
-  /// Ukubwa wa gridi ya miraba (null = hakuna snap kwa gridi).
+  /// Square grid size (null = no grid snapping).
   final double? grid;
   final Offset gridOffset;
   final bool objects;
@@ -103,7 +103,7 @@ class SnapTargets {
   final _x = <_Candidate>[];
   final _y = <_Candidate>[];
 
-  /// Lengo la karibu zaidi la [value] ndani ya [tolerance] (binary search).
+  /// The closest target to [value] within [tolerance] (binary search).
   _Candidate? _nearest(List<_Candidate> list, double value, double tol) {
     var lo = 0, hi = list.length;
     while (lo < hi) {
@@ -133,10 +133,10 @@ class SnapResult {
   final List<SnapLine> lines;
 }
 
-/// Snap mstatili unaosogezwa. Kubadilisha ukubwa: [handle] ni kishiko
-/// kinachoburutwa (k.m. [Alignment.centerLeft] = ukingo wa kushoto tu,
-/// [Alignment.bottomRight] = kona); [resize] = true ni sawa na
-/// bottomRight. [tolerance] iko kwenye nafasi ya artboard.
+/// Snap a moving rectangle. When resizing, [handle] is the dragged
+/// handle (e.g. [Alignment.centerLeft] = the left edge only,
+/// [Alignment.bottomRight] = a corner); [resize] = true is the same as
+/// bottomRight. [tolerance] is in artboard coordinates.
 SnapResult snapRect(
   Rect moving,
   SnapTargets t,
@@ -155,7 +155,7 @@ SnapResult snapRect(
           moving.bottom + (h.y > 0 ? dy : 0),
         )
       : moving.shift(Offset(dx, dy));
-  // Ondoa makosa madogo ya float (k.m. 119.99999) kwenye mhimili uliosnap
+  // Remove tiny float errors (e.g. 119.99999) on the snapped axis
   final r = rect;
   final exact = Rect.fromLTRB(
     lineX == null ? r.left : tidy(r.left),
@@ -164,7 +164,7 @@ SnapResult snapRect(
     lineY == null ? r.bottom : tidy(r.bottom),
   );
 
-  // Mistari inahesabiwa baada ya snap ili ifike kwenye nafasi mpya
+  // Lines are computed after snapping so they reach the new position
   final lines = <SnapLine>[
     if (lineX case final l?) _lineFor(l, exact, t, Axis.vertical),
     if (lineY case final l?) _lineFor(l, exact, t, Axis.horizontal),
@@ -177,11 +177,11 @@ SnapResult snapRect(
   SnapTargets t,
   double tol,
   Axis lineAxis,
-  // Kubadilisha ukubwa: -1 = ukingo wa mwanzo (kushoto/juu), 1 = wa mwisho,
-  // 0 = mhimili huu haubadiliki. null = kusogeza kipengele chote.
+  // Resizing: -1 = the start edge (left/top), 1 = the end edge,
+  // 0 = this axis doesn't change. null = moving the whole element.
   double? side,
 ) {
-  // lineAxis = vertical → tunasogeza X
+  // lineAxis = vertical → we are moving X
   final isX = lineAxis == Axis.vertical;
   final resize = side != null;
   if (side == 0) return (0.0, null);
@@ -206,13 +206,13 @@ SnapResult snapRect(
     if (t._nearest(list, a, tol) case final c?) consider(c, a);
   }
 
-  // Nafasi sawa: katikati ya majirani wawili (kushoto/kulia au juu/chini)
+  // Equal spacing: centered between two neighbors (left/right or top/bottom)
   if (!resize && t.objects) {
     final spacing = _equalSpacing(r, t.others, isX);
     if (spacing != null) consider(spacing, isX ? r.left : r.top);
   }
 
-  // Gridi ya miraba: kona ya juu-kushoto (au kingo za resize)
+  // Square grid: the top-left corner (or the resized edges)
   if (t.grid case final g? when best == null) {
     final off = isX ? t.gridOffset.dx : t.gridOffset.dy;
     for (final a in anchors.take(1)) {
@@ -223,8 +223,8 @@ SnapResult snapRect(
   return (tidy(bestDelta), best);
 }
 
-/// Lengo la "nafasi sawa": weka [r] katikati ya jirani wa kushoto na wa
-/// kulia (wanaopishana nayo kwenye mhimili mwingine).
+/// The "equal spacing" target: put [r] midway between its left and
+/// right neighbors (those overlapping it on the other axis).
 _Candidate? _equalSpacing(Rect r, List<Rect> others, bool isX) {
   Rect? before, after;
   for (final o in others) {
@@ -264,7 +264,7 @@ SnapLine _lineFor(_Candidate c, Rect r, SnapTargets t, Axis axis) {
   final isX = axis == Axis.vertical;
   final full = isX ? t.artboard.height : t.artboard.width;
   if (c.kind == SnapKind.spacing) {
-    // Mstari wa nafasi sawa unapita katikati ya kipengele
+    // The equal-spacing line passes through the element's center
     return SnapLine(
       axis == Axis.vertical ? Axis.horizontal : Axis.vertical,
       isX ? r.center.dy : r.center.dx,
@@ -286,8 +286,8 @@ SnapLine _lineFor(_Candidate c, Rect r, SnapTargets t, Axis axis) {
   return SnapLine(axis, position, 0, full, c.kind);
 }
 
-/// Umbali kutoka [r] hadi kipengele cha karibu (au ukingo wa artboard)
-/// kwa kila upande: kushoto, kulia, juu, chini.
+/// Distance from [r] to the nearest element (or artboard edge)
+/// on each side: left, right, top, bottom.
 List<Measure> measureDistances(Rect r, List<Rect> others, Size artboard) {
   final out = <Measure>[];
   final cy = r.center.dy, cx = r.center.dx;
@@ -310,7 +310,7 @@ List<Measure> measureDistances(Rect r, List<Rect> others, Size artboard) {
   return out;
 }
 
-/// Umbali kati ya mistatili miwili (kwa kukagua kwa Alt bila kusogeza).
+/// Distance between two rectangles (for Alt inspection without moving).
 List<Measure> measureBetween(Rect a, Rect b) {
   final out = <Measure>[];
   final y = (max(a.top, b.top) + min(a.bottom, b.bottom)) / 2;
