@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/painting.dart' show Alignment;
+
 /// Ubadilishaji mmoja wa nafasi unaotumiwa na canvas, rulers, guides,
 /// snapping na alignment.
 ///
@@ -87,3 +89,40 @@ Rect boundsOf(Iterable<Rect> rects) =>
 
 /// Zungusha namba hadi nafasi 2 za desimali (kuepuka 15.000000001).
 double tidy(double v) => (v * 100).roundToDouble() / 100;
+
+/// Upana/urefu mdogo kabisa wa kipengele kinachobadilishwa ukubwa.
+const minElementSize = Size(8, 4);
+
+/// Mstatili mpya baada ya kuburuta kishiko [handle] kwa [delta] (nafasi
+/// ya artboard). Ukingo ulio kinyume haubadiliki; [keepAspect] (Shift)
+/// inahifadhi uwiano wa upana/urefu kwenye kona.
+Rect resizeRect(
+  Rect start,
+  Alignment handle,
+  Offset delta, {
+  bool keepAspect = false,
+  Size minSize = minElementSize,
+}) {
+  var left = start.left, top = start.top;
+  var right = start.right, bottom = start.bottom;
+  if (handle.x < 0) left = (left + delta.dx).roundToDouble();
+  if (handle.x > 0) right = (right + delta.dx).roundToDouble();
+  if (handle.y < 0) top = (top + delta.dy).roundToDouble();
+  if (handle.y > 0) bottom = (bottom + delta.dy).roundToDouble();
+
+  var w = max(minSize.width, right - left);
+  var h = max(minSize.height, bottom - top);
+  if (keepAspect && handle.x != 0 && handle.y != 0 && start.height > 0) {
+    final ratio = start.width / start.height;
+    // Fuata mhimili uliosogea zaidi
+    if (w / start.width >= h / start.height) {
+      h = (w / ratio).roundToDouble();
+    } else {
+      w = (h * ratio).roundToDouble();
+    }
+  }
+  // Kingo zisizoburutwa zinabaki pale pale
+  final l = handle.x < 0 ? start.right - w : start.left;
+  final t = handle.y < 0 ? start.bottom - h : start.top;
+  return Rect.fromLTWH(l, t, w, h);
+}
