@@ -10,13 +10,13 @@ import '../models/ui_element.dart';
 import '../services/flutter_export.dart' show className;
 import '../widgets/element_view.dart';
 
-/// Skrini moja ikichorwa kama picha: rangi ya nyuma + vipengele vyake.
+/// One screen drawn as an image: the background color plus its elements.
 class ArtboardPicture extends StatelessWidget {
   const ArtboardPicture({super.key, required this.page, this.background});
 
   final DesignPage page;
 
-  /// null = rangi ya nyuma ya skrini; [Colors.transparent] = bila nyuma.
+  /// null = the screen's background color; [Colors.transparent] = no background.
   final Color? background;
 
   @override
@@ -40,7 +40,7 @@ class ArtboardPicture extends StatelessWidget {
   }
 }
 
-/// Jina la faili la picha, k.m. "LoginScreen@2x.png".
+/// The image file name, e.g. "LoginScreen@2x.png".
 String imageFileName(DesignPage page, double scale) {
   final s = scale == scale.roundToDouble()
       ? scale.toInt().toString()
@@ -48,7 +48,7 @@ String imageFileName(DesignPage page, double scale) {
   return '${className(page.name)}@${s}x.png';
 }
 
-/// Dirisha la "Export image": chagua skrini, ukubwa (1x–4x) na nyuma.
+/// The "Export image" dialog: pick a screen, a scale (1x–4x) and background.
 Future<void> showExportImage(
   BuildContext context, {
   required List<DesignPage> pages,
@@ -84,7 +84,7 @@ class _ExportImageDialogState extends State<ExportImageDialog> {
 
   DesignPage get page => widget.pages[_index];
 
-  /// Picha ya PNG ya skrini iliyochaguliwa kwa [_scale].
+  /// PNG image of the selected screen at [_scale].
   Future<Uint8List> _render() async {
     final boundary =
         _boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
