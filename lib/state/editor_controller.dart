@@ -143,6 +143,7 @@ class EditorController extends ChangeNotifier {
     Offset? at,
     String? text,
     IconStyle? iconStyle,
+    ElementShape? shape,
   }) {
     checkpoint();
     final screen = page.size;
@@ -167,7 +168,12 @@ class EditorController extends ChangeNotifier {
     );
 
     var el = UiElement.create(type, _newId(), pos & size);
-    el = el.copyWith(text: text, iconStyle: iconStyle);
+    el = el.copyWith(text: text, iconStyle: iconStyle, shape: shape);
+    // Duara na poligoni zinaanza kama mraba
+    if (shape != null && shape != ElementShape.rectangle) {
+      final side = min(el.rect.width, el.rect.height);
+      el = el.copyWith(rect: el.rect.topLeft & Size(side, side));
+    }
     selectedId = el.id;
     selectedIds = {el.id};
     _setPage(page.copyWith(elements: [...page.elements, el]));

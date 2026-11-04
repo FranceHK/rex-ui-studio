@@ -776,6 +776,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
           at: _local(d.offset),
           text: d.data.text,
           iconStyle: d.data.iconStyle,
+          shape: d.data.shape,
         );
       },
       builder: (context, candidates, _) => Container(
