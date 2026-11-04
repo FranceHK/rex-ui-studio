@@ -11,13 +11,13 @@ import '../models/ui_element.dart';
 
 typedef _Snapshot = (List<DesignPage>, int);
 
-/// Hali yote ya editor: skrini, kipengele kilichochaguliwa na undo/redo.
+/// All editor state: screens, the selected element and undo/redo.
 class EditorController extends ChangeNotifier {
   EditorController({DeviceFrame? device}) {
     pages = [
       DesignPage(
         id: _newId(),
-        name: 'Skrini 1',
+        name: 'Screen 1',
         device: device ?? defaultDevice,
         position: Offset.zero,
       ),
@@ -27,17 +27,17 @@ class EditorController extends ChangeNotifier {
   late List<DesignPage> pages;
   int pageIndex = 0;
 
-  /// Kipengele kikuu cha uteuzi (key object): cha mwisho kubonyezwa.
+  /// The selection's key object: the last one tapped.
   String? selectedId;
 
-  /// Vipengele vyote vilivyochaguliwa (Shift + bonyeza kuongeza).
+  /// All selected elements (Shift + tap to add).
   Set<String> selectedIds = {};
 
-  /// Mapendeleo ya mwonekano (rulers, guides, snapping…). Si sehemu ya
-  /// undo, lakini yanahifadhiwa na mradi.
+  /// View preferences (rulers, guides, snapping…). Not part of
+  /// undo, but saved with the project.
   ViewSettings view = const ViewSettings();
 
-  /// Nafasi kati ya artboards zinapopangwa zenyewe.
+  /// Space between artboards when they are laid out automatically.
   static const artboardGap = 96.0;
 
   int _seq = 0;
@@ -57,9 +57,9 @@ class EditorController extends ChangeNotifier {
   bool get canUndo => _undo.isNotEmpty;
   bool get canRedo => _redo.isNotEmpty;
 
-  // ---------- Historia ----------
+  // ---------- History ----------
 
-  /// Hifadhi hali ya sasa kabla ya mabadiliko ili yaweze kurudishwa.
+  /// Save the current state before a change so it can be undone.
   void checkpoint() {
     _undo.add((List.of(pages), pageIndex));
     if (_undo.length > 100) _undo.removeAt(0);
@@ -89,7 +89,7 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Vipengele ----------
+  // ---------- Elements ----------
 
   void select(String? id) {
     if (selectedId == id && selectedIds.length == (id == null ? 0 : 1)) {
@@ -100,8 +100,8 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Shift + bonyeza: ongeza au toa kwenye uteuzi. Kipengele kilichoongezwa
-  /// mwisho kinakuwa kipengele kikuu (key object).
+  /// Shift + tap: add to or remove from the selection. The last element
+  /// added becomes the key object.
   void toggleSelect(String id) {
     if (selectedIds.contains(id)) {
       selectedIds = {...selectedIds}..remove(id);
@@ -113,7 +113,7 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Weka kipengele kikuu bila kubadilisha uteuzi.
+  /// Set the key object without changing the selection.
   void setKeyObject(String id) {
     if (!selectedIds.contains(id)) return;
     selectedId = id;
@@ -126,7 +126,7 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Chagua vipengele vyote vinavyogusa [area] (nafasi ya artboard).
+  /// Select every element touching [area] (artboard coordinates).
   void selectInRect(Rect area, {bool add = false}) {
     final hits = [
       for (final e in page.elements)
@@ -137,7 +137,7 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Ongeza kipengele; [at] ni kona ya juu-kushoto ndani ya skrini.
+  /// Add an element; [at] is its top-left corner inside the screen.
   void addElement(
     ElementType type, {
     Offset? at,
@@ -169,7 +169,7 @@ class EditorController extends ChangeNotifier {
 
     var el = UiElement.create(type, _newId(), pos & size);
     el = el.copyWith(text: text, iconStyle: iconStyle, shape: shape);
-    // Duara na poligoni zinaanza kama mraba
+    // Circles and polygons start out square
     if (shape != null && shape != ElementShape.rectangle) {
       final side = min(el.rect.width, el.rect.height);
       el = el.copyWith(rect: el.rect.topLeft & Size(side, side));
@@ -213,7 +213,7 @@ class EditorController extends ChangeNotifier {
     _setPage(page.copyWith(elements: [...page.elements, ...copies]));
   }
 
-  /// Sogeza vipengele vilivyochaguliwa (vilivyofungwa havisogei).
+  /// Move the selected elements (locked ones stay put).
   void nudgeSelected(Offset delta) {
     final moves = {
       for (final e in selectedElements)
@@ -223,7 +223,7 @@ class EditorController extends ChangeNotifier {
     setRects(moves);
   }
 
-  /// Badilisha mistatili ya vipengele vingi kwa hatua moja ya undo.
+  /// Change several elements' rectangles in one undo step.
   void setRects(Map<String, Rect> rects, {bool record = true}) {
     if (rects.isEmpty) return;
     if (record) checkpoint();
@@ -242,9 +242,9 @@ class EditorController extends ChangeNotifier {
     updateElement(el.copyWith(locked: !el.locked));
   }
 
-  // ---------- Alignment na distribution ----------
+  // ---------- Alignment and distribution ----------
 
-  /// Vipengele vinavyoweza kusogezwa na alignment (visivyofungwa).
+  /// Elements alignment can move (the unlocked ones).
   Map<String, Rect> get _movable => {
     for (final e in selectedElements)
       if (!e.locked) e.id: e.rect,
@@ -256,8 +256,8 @@ class EditorController extends ChangeNotifier {
   bool get canDistribute => _movable.length >= 3;
   bool get canSpace => _movable.length >= 2;
 
-  /// Lengo la alignment kulingana na [ViewSettings.alignTo]. Kipengele
-  /// kimoja (au key object bila wengine) kinapangwa dhidi ya artboard.
+  /// The alignment target for [ViewSettings.alignTo]. A single element
+  /// (or a key object alone) is aligned to the artboard.
   (Rect, String?) _alignTarget() {
     final sel = selectedElements;
     switch (view.alignTo) {
@@ -266,8 +266,8 @@ class EditorController extends ChangeNotifier {
       case AlignTo.keyObject when sel.length > 1 && selected != null:
         return (selected!.rect, selectedId);
       case _:
-        // Artboard, parent frame (fremu mzazi ni artboard — hakuna
-        // fremu zilizowekwa ndani ya nyingine), au kipengele kimoja
+        // Artboard, parent frame (the parent frame is the artboard — frames
+        // aren't nested), or a single element
         return (artboardRect, null);
     }
   }
@@ -304,14 +304,14 @@ class EditorController extends ChangeNotifier {
     setRects(smartArrange(_movable));
   }
 
-  // ---------- Mwonekano, guides, gridi ----------
+  // ---------- View, guides, grid ----------
 
   void setView(ViewSettings v) {
     view = v;
     notifyListeners();
   }
 
-  /// Ongeza guide kwenye artboard ya sasa; inarudisha id yake.
+  /// Add a guide to the current artboard; returns its id.
   String addGuide(Axis axis, double position) {
     final g = Guide(id: 'g${_seq++}', axis: axis, position: tidy(position));
     updatePage(page.copyWith(guides: [...page.guides, g]));
@@ -354,9 +354,9 @@ class EditorController extends ChangeNotifier {
     setRulerOrigin(Offset.zero);
   }
 
-  // ---------- Mpangilio wa artboards kwenye canvas ----------
+  // ---------- Laying out artboards on the canvas ----------
 
-  /// Weka mahali artboards zisizo na nafasi: mfululizo kulia kwa zilizopo.
+  /// Place artboards that have no position: in a row right of the others.
   void _placeArtboards() {
     double? right;
     for (final p in pages) {
@@ -377,7 +377,7 @@ class EditorController extends ChangeNotifier {
     ];
   }
 
-  /// Sogeza artboard [index] hadi [position] (world).
+  /// Move artboard [index] to [position] (world).
   void moveArtboard(int index, Offset position, {bool record = true}) {
     if (record) checkpoint();
     pages = [...pages]
@@ -401,7 +401,7 @@ class EditorController extends ChangeNotifier {
     _setPage(page.copyWith(elements: toFront ? [...rest, el] : [el, ...rest]));
   }
 
-  // ---------- Mradi (kuhifadhi / kupakia) ----------
+  // ---------- Project (save / load) ----------
 
   Map<String, dynamic> toJson() => {
     'app': 'rexa_ui_studio',
@@ -411,11 +411,11 @@ class EditorController extends ChangeNotifier {
     'pages': [for (final p in pages) p.toJson()],
   };
 
-  /// Pakia mradi kutoka JSON. Ikishindikana, hali ya sasa haibadiliki
-  /// na [FormatException] inarushwa.
+  /// Load a project from JSON. On failure the current state is unchanged
+  /// and a [FormatException] is thrown.
   ///
-  /// [record] = true inaruhusu undo (k.m. mtumiaji anapoleta JSON);
-  /// vinginevyo historia inafutwa (k.m. app inapofunguliwa).
+  /// [record] = true allows undo (e.g. when the user imports JSON);
+  /// otherwise the history is cleared (e.g. when the app opens).
   void loadJson(Map<String, dynamic> json, {bool record = false}) {
     final List<DesignPage> loaded;
     try {
@@ -424,9 +424,10 @@ class EditorController extends ChangeNotifier {
           DesignPage.fromJson(p as Map<String, dynamic>),
       ];
     } catch (e) {
-      throw FormatException('Mradi si sahihi: $e');
+      throw FormatException('Invalid project: $e');
     }
-    if (loaded.isEmpty) throw const FormatException('Mradi hauna skrini');
+    if (loaded.isEmpty)
+      throw const FormatException('The project has no screens');
 
     if (record) {
       checkpoint();
@@ -442,7 +443,7 @@ class EditorController extends ChangeNotifier {
     }
     _placeArtboards();
 
-    // Hakikisha id mpya hazigongani na zilizopakiwa
+    // Make sure new ids don't clash with the loaded ones
     final ids = [
       for (final p in loaded) ...[
         p.id,
@@ -456,13 +457,13 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Anza mradi mpya mtupu (unaweza kurudishwa kwa undo).
+  /// Start a new empty project (can be undone).
   void resetProject() {
     checkpoint();
     pages = [
       DesignPage(
         id: _newId(),
-        name: 'Skrini 1',
+        name: 'Screen 1',
         device: page.device,
         position: Offset.zero,
       ),
@@ -472,7 +473,7 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Skrini ----------
+  // ---------- Screens ----------
 
   void addPage(DeviceFrame device) {
     checkpoint();
@@ -480,7 +481,7 @@ class EditorController extends ChangeNotifier {
       ...pages,
       DesignPage(
         id: _newId(),
-        name: 'Skrini ${pages.length + 1}',
+        name: 'Screen ${pages.length + 1}',
         device: device,
       ),
     ];
@@ -511,7 +512,7 @@ class EditorController extends ChangeNotifier {
     _setPage(p);
   }
 
-  /// Ongeza artboard iliyotengenezwa na ArtboardFactory (New Design).
+  /// Add an artboard made by ArtboardFactory (New Design).
   void addArtboard(DesignPage Function(String id) build) {
     checkpoint();
     pages = [...pages, build(_newId()).copyWith()];
@@ -521,8 +522,8 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Badili modeli ya kifaa. Ukubwa uliobadilishwa unaondolewa ili frame
-  /// iliyothibitishwa ya kifaa kipya itumike (isipokuwa "Ukubwa maalum").
+  /// Change the device model. A custom size is dropped so the new device's
+  /// verified frame is used (except for "Custom size").
   void setDevice(DeviceFrame device) {
     if (device == page.device) return;
     _resizeScreen(
@@ -533,12 +534,12 @@ class EditorController extends ChangeNotifier {
     );
   }
 
-  /// Badili kati ya skrini ya ndani na ya nje ya kifaa kinachokunjika.
+  /// Switch between the inner and outer screen of a foldable.
   void toggleFold() {
     if (foldPartner(page.device) case final other?) setDevice(other);
   }
 
-  /// Rudisha artboard kwenye ukubwa wa kifaa.
+  /// Reset the artboard to the device size.
   void resetSize() {
     if (page.customSize == null) return;
     _resizeScreen(page.copyWith(clearCustomSize: true));
@@ -554,12 +555,12 @@ class EditorController extends ChangeNotifier {
     _resizeScreen(page.copyWith(landscape: landscape));
   }
 
-  /// [size] ni ukubwa wa artboard ukiwa wima.
+  /// [size] is the artboard size in portrait.
   void setCustomSize(Size size, {bool record = true}) =>
       _resizeScreen(page.copyWith(customSize: size), record: record);
 
-  /// Badilisha ukubwa wa skrini; app bar na bottom nav zinafuata upana
-  /// mpya, na bottom nav inabaki chini.
+  /// Resize the screen; the app bar and bottom nav follow the new width,
+  /// and the bottom nav stays at the bottom.
   void _resizeScreen(DesignPage next, {bool record = true}) {
     final old = page.size;
     final size = next.size;
