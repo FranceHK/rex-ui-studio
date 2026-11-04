@@ -37,6 +37,7 @@ dependencies:
   shared_preferences: ^2.5.6
   amazing_icons: ^3.1.1
   share_plus: ^13.3.1
+  file_picker: ^13.3.2
 
 dev_dependencies:
   flutter_test:
