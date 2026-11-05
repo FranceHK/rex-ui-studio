@@ -217,6 +217,7 @@ WebNode _node(UiElement e) {
         ),
       ],
     ),
+    ElementType.path => _penShape(e, box),
     ElementType.divider => WebNode(
       'hr',
       style: {
@@ -229,6 +230,38 @@ WebNode _node(UiElement e) {
       },
     ),
   };
+}
+
+/// A pen shape as inline SVG stretched over its box (points in 0–100).
+WebNode _penShape(UiElement e, Map<String, String> box) {
+  final points = e.points
+      .map((p) => '${fmt(p.dx * 100)},${fmt(p.dy * 100)}')
+      .join(' ');
+  final color = hexColor(e.color);
+  return WebNode(
+    'svg',
+    attrs: const {'viewBox': '0 0 100 100', 'preserveAspectRatio': 'none'},
+    style: {...box, 'overflow': 'visible'},
+    children: [
+      WebNode(
+        e.closed ? 'polygon' : 'polyline',
+        attrs: {
+          'points': points,
+          if (e.closed)
+            'fill': color
+          else ...{
+            'fill': 'none',
+            'stroke': color,
+            'stroke-width': fmt(e.strokeWidth),
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round',
+            // Keeps the line width in px however the box is stretched
+            'vector-effect': 'non-scaling-stroke',
+          },
+        },
+      ),
+    ],
+  );
 }
 
 Map<String, String> _shapeCss(UiElement e) {
@@ -270,6 +303,9 @@ String exportHtml(DesignPage page) {
 
 const _voidTags = {'input', 'hr'};
 
+/// SVG elements written self-closing.
+const _svgLeaves = {'polygon', 'polyline'};
+
 void _writeHtml(StringBuffer b, WebNode n, int depth) {
   final pad = '  ' * depth;
   final attrs = [
@@ -279,7 +315,9 @@ void _writeHtml(StringBuffer b, WebNode n, int depth) {
       'style="${n.style.entries.map((e) => '${e.key}: ${e.value}').join('; ')}"',
   ].join(' ');
   final open = attrs.isEmpty ? '<${n.tag}>' : '<${n.tag} $attrs>';
-  if (_voidTags.contains(n.tag)) {
+  if (_svgLeaves.contains(n.tag)) {
+    b.writeln('$pad${open.substring(0, open.length - 1)} />');
+  } else if (_voidTags.contains(n.tag)) {
     b.writeln('$pad$open');
   } else if (n.children.isEmpty) {
     b.writeln('$pad$open${_html(n.text ?? '')}</${n.tag}>');
@@ -320,7 +358,12 @@ void _writeJsx(StringBuffer b, WebNode n, int depth) {
       : "'${v.replaceAll("'", r"\'")}'";
   final attrs = [
     for (final MapEntry(:key, :value) in n.attrs.entries)
-      '${key == 'class' ? 'className' : key}="${_html(value)}"',
+      '${switch (key) {
+        'class' => 'className',
+        // React keeps aria-*/data-* as they are; other SVG attrs are camelCase
+        _ when key.startsWith('aria-') || key.startsWith('data-') => key,
+        _ => camel(key),
+      }}="${_html(value)}"',
     if (n.style.isNotEmpty)
       'style={{ ${n.style.entries.map((e) => '${camel(e.key)}: ${value(e.value)}').join(', ')} }}',
   ].join(' ');
