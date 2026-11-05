@@ -399,6 +399,27 @@ class PropertiesPanel extends StatelessWidget {
           onChanged: (shape) => update(e.copyWith(shape: shape)),
         ),
       ],
+      if (e.type == ElementType.path) ...[
+        SwitchListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Closed shape (filled)'),
+          subtitle: Text('${e.points.length} points'),
+          value: e.closed,
+          onChanged: (v) => update(e.copyWith(closed: v)),
+        ),
+        if (!e.closed) ...[
+          _Label('Line width: ${e.strokeWidth.round()}'),
+          Slider(
+            value: e.strokeWidth.clamp(1, 24),
+            min: 1,
+            max: 24,
+            divisions: 23,
+            onChangeStart: (_) => c.checkpoint(),
+            onChanged: (v) => update(e.copyWith(strokeWidth: v), record: false),
+          ),
+        ],
+      ],
       if (e.type.hasRadius) ...[
         const SizedBox(height: 8),
         _Label('Corner radius: ${e.radius.round()}'),
