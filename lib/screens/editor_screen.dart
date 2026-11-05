@@ -134,6 +134,13 @@ class _EditorScreenState extends State<EditorScreen> {
         _toggleLockSelected,
     const SingleActivator(LogicalKeyboardKey.keyL, control: true, shift: true):
         _toggleLockSelected,
+    const SingleActivator(LogicalKeyboardKey.keyG, meta: true): c.groupSelected,
+    const SingleActivator(LogicalKeyboardKey.keyG, control: true):
+        c.groupSelected,
+    const SingleActivator(LogicalKeyboardKey.keyG, meta: true, shift: true):
+        c.ungroupSelected,
+    const SingleActivator(LogicalKeyboardKey.keyG, control: true, shift: true):
+        c.ungroupSelected,
     const SingleActivator(LogicalKeyboardKey.keyA, meta: true): c.selectAll,
     const SingleActivator(LogicalKeyboardKey.keyA, control: true): c.selectAll,
     const SingleActivator(LogicalKeyboardKey.escape): () => c.select(null),
