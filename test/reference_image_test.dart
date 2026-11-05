@@ -1,14 +1,19 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rexa_ui_studio/models/reference_image.dart';
 import 'package:rexa_ui_studio/models/ui_element.dart';
 import 'package:rexa_ui_studio/screens/export_image_dialog.dart';
 import 'package:rexa_ui_studio/services/reference_import.dart';
 import 'package:rexa_ui_studio/state/editor_controller.dart';
 import 'package:rexa_ui_studio/widgets/reference_section.dart';
+
+import 'layers_test.dart' show openEditor;
 
 /// A solid PNG of [width] × [height] px.
 Future<Uint8List> pngOf(int width, int height) async {
@@ -124,4 +129,93 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: ArtboardPicture(page: c.page)));
     expect(find.byType(Image), findsNothing);
   });
+
+  test('a custom rect is kept in JSON and used for drawing', () {
+    final r = ReferenceImage(
+      bytes: Uint8List(0),
+      pixelSize: const Size(100, 200),
+      fit: ReferenceFit.custom,
+      rect: const Rect.fromLTWH(10, 20, 50, 100),
+    );
+    final back = ReferenceImage.fromJson(r.toJson());
+    expect(back.fit, ReferenceFit.custom);
+    expect(
+      back.rectIn(const Size(400, 800)),
+      const Rect.fromLTWH(10, 20, 50, 100),
+    );
+    // Custom without a rect falls back to fit width
+    expect(
+      ReferenceImage(
+        bytes: Uint8List(0),
+        pixelSize: const Size(100, 200),
+        fit: ReferenceFit.custom,
+      ).rectIn(const Size(400, 800)),
+      const Rect.fromLTWH(0, 0, 400, 800),
+    );
+  });
+
+  testWidgets('the reference can be moved and resized on screen', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final c = EditorController();
+    c.setReference(
+      ReferenceImage(
+        bytes: base64Decode(_pixel),
+        pixelSize: const Size(100, 200),
+        fit: ReferenceFit.custom,
+        rect: const Rect.fromLTWH(50, 50, 100, 200),
+      ),
+    );
+    await openEditor(tester, c);
+
+    final adjust = find.text('Move & resize on screen');
+    await tester.ensureVisible(adjust);
+    await tester.pumpAndSettle();
+    await tester.tap(adjust);
+    await tester.pumpAndSettle();
+    final editor = find.byKey(const ValueKey('reference-editor'));
+    expect(editor, findsOneWidget);
+    final image = find.byKey(const ValueKey('reference-image'));
+    final r0 = tester.getRect(image);
+
+    // Drag the middle: the picture moves
+    final move = await tester.startGesture(
+      tester.getCenter(editor),
+      kind: PointerDeviceKind.stylus,
+    );
+    for (var i = 0; i < 4; i++) {
+      await move.moveBy(const Offset(10, 8));
+      await tester.pump();
+    }
+    await move.up();
+    await tester.pumpAndSettle();
+    final r1 = tester.getRect(image);
+    expect(r1.size, r0.size);
+    expect(r1.left, greaterThan(r0.left + 20));
+
+    // Drag the bottom-right corner: it grows and keeps its proportions
+    final pen = await tester.startGesture(
+      r1.bottomRight,
+      kind: PointerDeviceKind.stylus,
+    );
+    for (var i = 0; i < 5; i++) {
+      await pen.moveBy(const Offset(12, 4));
+      await tester.pump();
+    }
+    await pen.up();
+    await tester.pumpAndSettle();
+    final r2 = tester.getRect(image);
+    expect(r2.width, greaterThan(r1.width + 20));
+    expect(r2.width / r2.height, closeTo(0.5, 0.02));
+    expect(r2.topLeft, offsetMoreOrLessEquals(r1.topLeft, epsilon: 0.5));
+
+    await tester.tap(find.text('Done adjusting'));
+    await tester.pumpAndSettle();
+    expect(editor, findsNothing);
+  });
 }
+
+/// 1×1 transparent PNG.
+const _pixel =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
