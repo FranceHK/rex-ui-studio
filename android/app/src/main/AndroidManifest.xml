@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Google Fonts are downloaded at runtime -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="rexa_ui_studio"
         android:name="${applicationName}"
