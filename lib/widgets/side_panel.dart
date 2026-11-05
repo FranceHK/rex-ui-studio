@@ -623,6 +623,12 @@ class _LayersTab extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            // Grouped layers are indented under a group marker
+            contentPadding: EdgeInsets.only(
+              left: e.groupId == null ? 16 : 32,
+              right: 4,
+            ),
+            subtitle: e.groupId == null ? null : const Text('Group'),
             onTap: () => c.select(e.id),
             // Hidden layers are dimmed
             textColor: e.hidden ? scheme.outline : null,
