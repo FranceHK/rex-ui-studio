@@ -10,7 +10,9 @@ String exportSwiftUI(DesignPage page) {
   final name = className(page.name).replaceAll(RegExp(r'Screen$'), 'View');
   final size = page.size;
   final usesPolygon = page.visibleElements.any(
-    (e) => e.type.hasShape && shapePoints(e.shape) != null,
+    (e) =>
+        (e.type.hasShape && shapePoints(e.shape) != null) ||
+        e.type == ElementType.path,
   );
 
   final b = StringBuffer()
@@ -48,6 +50,7 @@ String exportSwiftUI(DesignPage page) {
       ..writeln('/// A polygon through points given in a 0–1 unit square.')
       ..writeln('struct PolygonShape: Shape {')
       ..writeln('    let points: [CGPoint]')
+      ..writeln('    var closed = true')
       ..writeln()
       ..writeln('    func path(in rect: CGRect) -> Path {')
       ..writeln('        var path = Path()')
@@ -61,7 +64,7 @@ String exportSwiftUI(DesignPage page) {
         'else { path.addLine(to: point) }',
       )
       ..writeln('        }')
-      ..writeln('        path.closeSubpath()')
+      ..writeln('        if closed { path.closeSubpath() }')
       ..writeln('        return path')
       ..writeln('    }')
       ..writeln('}');
@@ -127,7 +130,20 @@ String _view(UiElement e) {
     ElementType.divider =>
       'Rectangle().fill(${_color(e.color)}).frame(height: 1)'
           '.frame(maxHeight: .infinity)',
+    ElementType.path => _penShape(e),
   };
+}
+
+String _penShape(UiElement e) {
+  final list = e.points
+      .map((p) => 'CGPoint(x: ${fmt3(p.dx)}, y: ${fmt3(p.dy)})')
+      .join(', ');
+  return e.closed
+      ? 'PolygonShape(points: [$list]).fill(${_color(e.color)})'
+      : 'PolygonShape(points: [$list], closed: false)'
+            '.stroke(${_color(e.color)}, style: StrokeStyle('
+            'lineWidth: ${fmt(e.strokeWidth)}, lineCap: .round, '
+            'lineJoin: .round))';
 }
 
 String _shape(UiElement e) {
