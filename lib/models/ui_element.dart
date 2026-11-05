@@ -138,6 +138,7 @@ class UiElement {
     this.radius = 0,
     this.bold = false,
     this.locked = false,
+    this.hidden = false,
     this.iconStyle = IconStyle.broken,
     this.textAlign,
     this.vAlign = VAlign.middle,
@@ -253,6 +254,9 @@ class UiElement {
 
   /// A locked element can't be moved or resized.
   final bool locked;
+
+  /// A hidden element isn't drawn on the canvas, in "Run" or in exports.
+  final bool hidden;
   final IconStyle iconStyle;
 
   /// Text alignment INSIDE the box (not moving the element).
@@ -285,6 +289,7 @@ class UiElement {
     double? radius,
     bool? bold,
     bool? locked,
+    bool? hidden,
     IconStyle? iconStyle,
     TextAlign? textAlign,
     VAlign? vAlign,
@@ -303,6 +308,7 @@ class UiElement {
       radius: radius ?? this.radius,
       bold: bold ?? this.bold,
       locked: locked ?? this.locked,
+      hidden: hidden ?? this.hidden,
       iconStyle: iconStyle ?? this.iconStyle,
       textAlign: textAlign ?? this.textAlign,
       vAlign: vAlign ?? this.vAlign,
@@ -322,6 +328,7 @@ class UiElement {
     'radius': radius,
     'bold': bold,
     'locked': locked,
+    if (hidden) 'hidden': true,
     'iconStyle': iconStyle.name,
     'textAlign': ?textAlign?.name,
     if (vAlign != VAlign.middle) 'vAlign': vAlign.name,
@@ -347,6 +354,7 @@ class UiElement {
       radius: (json['radius'] as num).toDouble(),
       bold: json['bold'] as bool? ?? false,
       locked: json['locked'] as bool? ?? false,
+      hidden: json['hidden'] as bool? ?? false,
       iconStyle:
           IconStyle.values.asNameMap()[json['iconStyle']] ?? IconStyle.broken,
       textAlign: TextAlign.values.asNameMap()[json['textAlign']],
@@ -405,6 +413,9 @@ class DesignPage {
 
   /// A picture to trace over (never exported).
   final ReferenceImage? reference;
+
+  /// The elements that are drawn (not hidden), bottom to top.
+  Iterable<UiElement> get visibleElements => elements.where((e) => !e.hidden);
 
   /// Artboard size in portrait.
   Size get portraitSize => customSize ?? device.size;
