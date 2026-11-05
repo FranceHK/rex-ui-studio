@@ -142,7 +142,8 @@ class UiElement {
     this.textColor = inkColor,
     this.fontSize = 16,
     this.radius = 0,
-    this.bold = false,
+    this.fontWeight = 400,
+    this.fontFamily,
     this.locked = false,
     this.hidden = false,
     this.groupId,
@@ -165,7 +166,7 @@ class UiElement {
         rect: rect,
         text: 'Heading',
         fontSize: 22,
-        bold: true,
+        fontWeight: 600,
       ),
       ElementType.button => UiElement(
         id: id,
@@ -175,7 +176,7 @@ class UiElement {
         color: brandColor,
         textColor: Colors.white,
         radius: 12,
-        bold: true,
+        fontWeight: 600,
       ),
       ElementType.input => UiElement(
         id: id,
@@ -209,7 +210,7 @@ class UiElement {
         text: 'Home',
         color: Colors.white,
         fontSize: 18,
-        bold: true,
+        fontWeight: 600,
       ),
       ElementType.navBar => UiElement(
         id: id,
@@ -233,7 +234,7 @@ class UiElement {
         color: const Color(0xFFE0E7FF),
         textColor: brandColor,
         fontSize: 18,
-        bold: true,
+        fontWeight: 600,
       ),
       ElementType.toggle => UiElement(
         id: id,
@@ -267,7 +268,14 @@ class UiElement {
   final Color textColor;
   final double fontSize;
   final double radius;
-  final bool bold;
+
+  /// Font weight, 100 (thin) to 900 (black).
+  final int fontWeight;
+
+  /// Google Fonts family; null is the system font.
+  final String? fontFamily;
+
+  bool get bold => fontWeight >= 600;
 
   /// A locked element can't be moved or resized.
   final bool locked;
@@ -327,7 +335,9 @@ class UiElement {
     Color? textColor,
     double? fontSize,
     double? radius,
-    bool? bold,
+    int? fontWeight,
+    String? fontFamily,
+    bool clearFontFamily = false,
     bool? locked,
     bool? hidden,
     String? groupId,
@@ -351,7 +361,8 @@ class UiElement {
       textColor: textColor ?? this.textColor,
       fontSize: fontSize ?? this.fontSize,
       radius: radius ?? this.radius,
-      bold: bold ?? this.bold,
+      fontWeight: fontWeight ?? this.fontWeight,
+      fontFamily: clearFontFamily ? null : fontFamily ?? this.fontFamily,
       locked: locked ?? this.locked,
       hidden: hidden ?? this.hidden,
       groupId: clearGroup ? null : groupId ?? this.groupId,
@@ -375,7 +386,8 @@ class UiElement {
     'textColor': textColor.toARGB32(),
     'fontSize': fontSize,
     'radius': radius,
-    'bold': bold,
+    'weight': fontWeight,
+    'font': ?fontFamily,
     'locked': locked,
     if (hidden) 'hidden': true,
     'group': ?groupId,
@@ -409,7 +421,10 @@ class UiElement {
       textColor: Color(json['textColor'] as int),
       fontSize: (json['fontSize'] as num).toDouble(),
       radius: (json['radius'] as num).toDouble(),
-      bold: json['bold'] as bool? ?? false,
+      fontWeight:
+          json['weight'] as int? ??
+          (json['bold'] as bool? ?? false ? 600 : 400),
+      fontFamily: json['font'] as String?,
       locked: json['locked'] as bool? ?? false,
       hidden: json['hidden'] as bool? ?? false,
       groupId: json['group'] as String?,
