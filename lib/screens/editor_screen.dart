@@ -118,8 +118,12 @@ class _EditorScreenState extends State<EditorScreen> {
         _toggleFocusCanvas,
     const SingleActivator(LogicalKeyboardKey.backslash, control: true):
         _toggleFocusCanvas,
-    const SingleActivator(LogicalKeyboardKey.delete): c.deleteSelected,
-    const SingleActivator(LogicalKeyboardKey.backspace): c.deleteSelected,
+    const SingleActivator(LogicalKeyboardKey.delete): _deleteOrUndoPoint,
+    const SingleActivator(LogicalKeyboardKey.backspace): _deleteOrUndoPoint,
+    const SingleActivator(LogicalKeyboardKey.keyP): () =>
+        c.setPenTool(!c.penTool),
+    const SingleActivator(LogicalKeyboardKey.enter): () =>
+        c.finishPen(closed: false),
     const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): c.undo,
     const SingleActivator(LogicalKeyboardKey.keyZ, control: true): c.undo,
     const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
@@ -143,7 +147,7 @@ class _EditorScreenState extends State<EditorScreen> {
         c.ungroupSelected,
     const SingleActivator(LogicalKeyboardKey.keyA, meta: true): c.selectAll,
     const SingleActivator(LogicalKeyboardKey.keyA, control: true): c.selectAll,
-    const SingleActivator(LogicalKeyboardKey.escape): () => c.select(null),
+    const SingleActivator(LogicalKeyboardKey.escape): _escape,
     // Alignment (like Figma): Alt + A/H/D/W/V/S, Alt + C = center
     for (final (key, op) in [
       (LogicalKeyboardKey.keyA, AlignOp.left),
@@ -211,6 +215,24 @@ class _EditorScreenState extends State<EditorScreen> {
       }
     }
     return KeyEventResult.ignored;
+  }
+
+  /// Backspace/Delete: remove the last pen point while drawing,
+  /// otherwise delete the selection.
+  void _deleteOrUndoPoint() => c.penTool && c.penDraft.isNotEmpty
+      ? c.undoPenPoint()
+      : c.deleteSelected();
+
+  /// Esc: drop the pen draft, then leave the pen tool, then deselect.
+  void _escape() {
+    if (c.penTool && c.penDraft.isNotEmpty) {
+      c.setPenTool(false);
+      c.setPenTool(true);
+    } else if (c.penTool) {
+      c.setPenTool(false);
+    } else {
+      c.select(null);
+    }
   }
 
   void _toggleLockSelected() {
@@ -427,6 +449,14 @@ class _EditorScreenState extends State<EditorScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  IconButton(
+                    tooltip: c.penTool
+                        ? 'Pen tool on — tap to turn off (P)'
+                        : 'Pen tool: draw a shape (P)',
+                    isSelected: c.penTool,
+                    onPressed: () => c.setPenTool(!c.penTool),
+                    icon: const Icon(AppIcons.bezier),
                   ),
                   IconButton(
                     tooltip: 'Settings (pen, grid, rulers, snapping)',
