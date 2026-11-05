@@ -180,7 +180,7 @@ class _RunScreenState extends State<RunScreen> {
                                     size: p.size,
                                     child: Stack(
                                       children: [
-                                        for (final e in p.elements)
+                                        for (final e in p.visibleElements)
                                           Positioned.fromRect(
                                             rect: e.rect,
                                             child: e.link == null
