@@ -62,6 +62,50 @@ String exportFlutter(DesignPage page) {
     ..writeln('    );')
     ..writeln('  }')
     ..writeln('}');
+
+  if (page.visibleElements.any((e) => e.type == ElementType.path)) {
+    b
+      ..writeln()
+      ..writeln('/// A pen shape: points are fractions (0–1) of the box.')
+      ..writeln('class PenShapePainter extends CustomPainter {')
+      ..writeln(
+        '  const PenShapePainter(this.points, {required this.color, '
+        'this.closed = true, this.strokeWidth = 2});',
+      )
+      ..writeln()
+      ..writeln('  final List<Offset> points;')
+      ..writeln('  final Color color;')
+      ..writeln('  final bool closed;')
+      ..writeln('  final double strokeWidth;')
+      ..writeln()
+      ..writeln('  @override')
+      ..writeln('  void paint(Canvas canvas, Size size) {')
+      ..writeln('    final path = Path();')
+      ..writeln('    for (var i = 0; i < points.length; i++) {')
+      ..writeln(
+        '      final p = Offset(points[i].dx * size.width, '
+        'points[i].dy * size.height);',
+      )
+      ..writeln(
+        '      i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);',
+      )
+      ..writeln('    }')
+      ..writeln('    if (closed) path.close();')
+      ..writeln('    final paint = Paint()..color = color;')
+      ..writeln('    if (!closed) {')
+      ..writeln('      paint')
+      ..writeln('        ..style = PaintingStyle.stroke')
+      ..writeln('        ..strokeWidth = strokeWidth')
+      ..writeln('        ..strokeCap = StrokeCap.round')
+      ..writeln('        ..strokeJoin = StrokeJoin.round;')
+      ..writeln('    }')
+      ..writeln('    canvas.drawPath(path, paint);')
+      ..writeln('  }')
+      ..writeln()
+      ..writeln('  @override')
+      ..writeln('  bool shouldRepaint(PenShapePainter old) => false;')
+      ..writeln('}');
+  }
   return b.toString();
 }
 
@@ -126,6 +170,10 @@ String _widget(UiElement e) {
           "activeTrackColor: ${_c(e.color)}, onChanged: (_) {}))",
     ElementType.divider =>
       "Center(child: Divider(height: 1, thickness: 1, color: ${_c(e.color)}))",
+    ElementType.path =>
+      "CustomPaint(painter: PenShapePainter(const [${e.points.map((p) => 'Offset(${p.dx}, ${p.dy})').join(', ')}], "
+          "color: ${_c(e.color)}"
+          "${e.closed ? '' : ', closed: false, strokeWidth: ${_n(e.strokeWidth)}'}))",
   };
 }
 
