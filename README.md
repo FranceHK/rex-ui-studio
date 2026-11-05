@@ -29,6 +29,10 @@ ready-to-use Flutter code. Built with Flutter (web, Android, macOS).
   background.
 - **Code export** — pick Flutter, SwiftUI, Jetpack Compose, HTML or React
   and copy the generated code.
+- **Fonts** — 21 Google Fonts families, each previewed in its own font, and
+  all nine weights from Thin (100) to Black (900); exported to every language.
+- **Layers** — drag layers up and down, move one step (Cmd+] / Cmd+[) or to
+  the front/back, hide, lock and group them.
 - 4,900+ icons from [amazing_icons](https://pub.dev/packages/amazing_icons).
 
 ## Getting started
