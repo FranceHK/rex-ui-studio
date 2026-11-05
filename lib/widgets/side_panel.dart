@@ -624,15 +624,33 @@ class _LayersTab extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             onTap: () => c.select(e.id),
-            trailing: IconButton(
-              tooltip: e.locked ? 'Unlock' : 'Lock',
-              visualDensity: VisualDensity.compact,
-              icon: Icon(
-                e.locked ? AppIcons.lock : AppIcons.unlock,
-                size: 18,
-                color: e.locked ? scheme.primary : scheme.outline,
-              ),
-              onPressed: () => c.toggleLock(e.id),
+            // Hidden layers are dimmed
+            textColor: e.hidden ? scheme.outline : null,
+            iconColor: e.hidden ? scheme.outline : null,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: e.hidden ? 'Show' : 'Hide',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    e.hidden ? AppIcons.hidden : AppIcons.view,
+                    size: 18,
+                    color: e.hidden ? scheme.primary : scheme.outline,
+                  ),
+                  onPressed: () => c.toggleHidden(e.id),
+                ),
+                IconButton(
+                  tooltip: e.locked ? 'Unlock' : 'Lock',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    e.locked ? AppIcons.lock : AppIcons.unlock,
+                    size: 18,
+                    color: e.locked ? scheme.primary : scheme.outline,
+                  ),
+                  onPressed: () => c.toggleLock(e.id),
+                ),
+              ],
             ),
           ),
       ],
