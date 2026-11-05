@@ -45,6 +45,9 @@ abstract final class AppIcons {
   static const trash = AmazingIconBroken.trash;
   static const front = AmazingIconBroken.arrowUp;
   static const backward = AmazingIconBroken.arrowDown;
+  static const toFront = AmazingIconBroken.arrowCircleUp;
+  static const toBack = AmazingIconBroken.arrowCircleDown;
+  static const dragHandle = AmazingIconBroken.arrowSwapVertical;
   static const search = AmazingIconBroken.searchNormal1;
   static const add = AmazingIconBroken.add;
   static const close = AmazingIconBroken.closeCircle;
