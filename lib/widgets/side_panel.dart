@@ -592,11 +592,20 @@ class _LayersTab extends StatelessWidget {
         ),
       );
     }
-    return ListView(
+    final layers = c.page.elements.reversed.toList();
+    // Top layer first; drag the handle (or long-press a row) to move a
+    // layer up or down
+    return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-      children: [
-        for (final e in c.page.elements.reversed)
-          ListTile(
+      buildDefaultDragHandles: false,
+      itemCount: layers.length,
+      onReorderItem: c.reorderLayer,
+      itemBuilder: (context, i) {
+        final e = layers[i];
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey('layer-${e.id}'),
+          index: i,
+          child: ListTile(
             dense: true,
             visualDensity: VisualDensity.compact,
             selected: e.id == c.selectedId,
@@ -656,10 +665,25 @@ class _LayersTab extends StatelessWidget {
                   ),
                   onPressed: () => c.toggleLock(e.id),
                 ),
+                ReorderableDragStartListener(
+                  index: i,
+                  child: Tooltip(
+                    message: 'Drag to move up or down',
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(
+                        AppIcons.dragHandle,
+                        size: 18,
+                        color: scheme.outline,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-      ],
+        );
+      },
     );
   }
 }
