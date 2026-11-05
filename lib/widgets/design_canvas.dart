@@ -106,6 +106,9 @@ class _DesignCanvasState extends State<DesignCanvas> {
   /// before the pen touches the screen.
   String? _nearId;
 
+  /// Where the pen hovers over the artboard while drawing (artboard units).
+  Offset? _penCursor;
+
   /// Fingers on the canvas (pointer → position, for pinch).
   final _touches = <int, Offset>{};
   bool _pinching = false;
@@ -768,6 +771,13 @@ class _DesignCanvasState extends State<DesignCanvas> {
                       label: _guideLabel(g.axis, g.position),
                     ),
                   if (v.showRulers) ..._rulers(view, scheme, selBounds),
+                  if (c.penTool)
+                    Positioned(
+                      top: v.showRulers ? 36 : 12,
+                      left: 0,
+                      right: 0,
+                      child: Center(child: _PenBar(controller: c)),
+                    ),
                   Positioned(
                     right: 16,
                     bottom: 16,
@@ -958,6 +968,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
                   _referenceLayer(p, onTop: true),
                   if (p.safeArea case final insets? when p.showSafeArea)
                     Positioned.fill(child: SafeAreaGuides(insets: insets)),
+                  if (active && c.penTool) _penLayer(p, scale),
                   if (active &&
                       c.adjustingReference &&
                       (p.reference?.visible ?? false))
@@ -1241,6 +1252,40 @@ class _DesignCanvasState extends State<DesignCanvas> {
           child: MouseRegion(
             cursor: _resizeCursor(h),
             child: _Grip(handle: h, color: color, scale: scale),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The pen tool's drawing surface: taps add points; tapping the first
+  /// point closes the shape.
+  Widget _penLayer(DesignPage p, double scale) {
+    final draft = c.penDraft;
+    final closeReach = 12 / scale;
+    bool nearFirst(Offset at) =>
+        draft.length >= 3 && (at - draft.first).distance <= closeReach;
+    return Positioned.fill(
+      key: const ValueKey('pen-layer'),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.precise,
+        onHover: (e) => setState(() => _penCursor = e.localPosition),
+        onExit: (_) => setState(() => _penCursor = null),
+        child: GestureDetector(
+          supportedDevices: _editDevices,
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (d) {
+            final at = d.localPosition;
+            nearFirst(at) ? c.finishPen(closed: true) : c.addPenPoint(at);
+          },
+          child: CustomPaint(
+            painter: PenDraftPainter(
+              draft,
+              cursor: _penCursor,
+              scale: scale,
+              color: Theme.of(context).colorScheme.primary,
+              closing: _penCursor != null && nearFirst(_penCursor!),
+            ),
           ),
         ),
       ),
@@ -1756,6 +1801,61 @@ class _Grip extends StatelessWidget {
       widthFactor: handle.x == 0 ? 1 : 0.45,
       heightFactor: handle.x == 0 ? 0.45 : 1,
       child: box,
+    );
+  }
+}
+
+/// Hints and buttons while the pen tool is on (for tablets without a
+/// keyboard as well).
+class _PenBar extends StatelessWidget {
+  const _PenBar({required this.controller});
+
+  final EditorController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = controller;
+    final n = c.penDraft.length;
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 3,
+      color: scheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 4,
+          children: [
+            Icon(AppIcons.bezier, size: 18, color: scheme.primary),
+            Text(
+              n == 0
+                  ? 'Pen: tap to place points'
+                  : n < 3
+                  ? '$n points · keep tapping'
+                  : '$n points · tap the first point to close',
+            ),
+            TextButton(
+              onPressed: n > 0 ? c.undoPenPoint : null,
+              child: const Text('Undo point'),
+            ),
+            TextButton(
+              onPressed: n >= 2 ? () => c.finishPen(closed: false) : null,
+              child: const Text('Finish line'),
+            ),
+            TextButton(
+              onPressed: n >= 3 ? () => c.finishPen(closed: true) : null,
+              child: const Text('Close shape'),
+            ),
+            IconButton(
+              tooltip: 'Exit pen tool (Esc)',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(AppIcons.close, size: 18),
+              onPressed: () => c.setPenTool(false),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
