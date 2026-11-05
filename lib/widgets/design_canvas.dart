@@ -8,6 +8,7 @@ import '../canvas/geometry.dart';
 import '../canvas/layout.dart';
 import '../canvas/snapping.dart';
 import '../icons/app_icons.dart';
+import '../models/reference_image.dart';
 import '../models/ui_element.dart';
 import '../state/editor_controller.dart';
 import 'canvas_painters.dart';
@@ -57,6 +58,15 @@ class _ResizeDrag extends _Drag {
   final Rect start;
   final Offset pointer;
   final SnapTargets targets;
+  bool recorded = false;
+}
+
+/// Moving ([handle] == null) or resizing the reference image.
+class _ReferenceDrag extends _Drag {
+  _ReferenceDrag(this.start, this.pointer, this.handle);
+  final Rect start;
+  final Offset pointer;
+  final Alignment? handle;
   bool recorded = false;
 }
 
@@ -339,6 +349,40 @@ class _DesignCanvasState extends State<DesignCanvas> {
       record: false,
     );
     setState(() => _lines = v.smartGuides ? snapped.lines : const []);
+  }
+
+  // ---------- Reference image ----------
+
+  void _beginReferenceDrag(Alignment? handle, Offset global) {
+    final r = c.page.reference;
+    if (r == null) return;
+    _drag = _ReferenceDrag(r.rectIn(c.page.size), _local(global), handle);
+  }
+
+  void _updateReferenceDrag(Offset global) {
+    final d = _drag;
+    final r = c.page.reference;
+    if (d is! _ReferenceDrag || r == null || _pinching) return;
+    if (!d.recorded) {
+      c.checkpoint();
+      d.recorded = true;
+    }
+    final delta = _local(global) - d.pointer;
+    final h = d.handle;
+    final rect = h == null
+        ? d.start.shift(delta)
+        : resizeRect(
+            d.start,
+            h,
+            delta,
+            // Corners keep the picture's proportions
+            keepAspect: h.x != 0 && h.y != 0,
+            minSize: const Size(20, 20),
+          );
+    c.setReference(
+      r.copyWith(fit: ReferenceFit.custom, rect: tidyRect(rect)),
+      record: false,
+    );
   }
 
   void _endDrag() {
@@ -914,6 +958,10 @@ class _DesignCanvasState extends State<DesignCanvas> {
                   _referenceLayer(p, onTop: true),
                   if (p.safeArea case final insets? when p.showSafeArea)
                     Positioned.fill(child: SafeAreaGuides(insets: insets)),
+                  if (active &&
+                      c.adjustingReference &&
+                      (p.reference?.visible ?? false))
+                    _referenceEditor(p, scale),
                   if (active && c.selectedIds.length > 1)
                     if (c.selectedElements.where((e) => !e.locked && !e.hidden)
                         case final movable when movable.isNotEmpty)
@@ -1171,6 +1219,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     required double scale,
     required Color color,
     required void Function(Offset global) onStart,
+    void Function(Offset global)? onUpdate,
   }) {
     return Positioned(
       left: pad + (h.x + 1) / 2 * size.width - handle / 2,
@@ -1187,13 +1236,69 @@ class _DesignCanvasState extends State<DesignCanvas> {
           supportedDevices: _editDevices,
           dragStartBehavior: DragStartBehavior.down,
           onPanStart: (d) => onStart(d.globalPosition),
-          onPanUpdate: (d) => _updateResize(d.globalPosition),
+          onPanUpdate: (d) => (onUpdate ?? _updateResize)(d.globalPosition),
           onPanEnd: (_) => _endDrag(),
           child: MouseRegion(
             cursor: _resizeCursor(h),
             child: _Grip(handle: h, color: color, scale: scale),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Move/resize frame over the reference image while adjusting it.
+  Widget _referenceEditor(DesignPage p, double scale) {
+    const color = Color(0xFFF79009);
+    final rect = p.reference!.rectIn(p.size);
+    final handle = (v.penMode ? 20 : 12) / scale;
+    final pad = handle;
+    return Positioned.fromRect(
+      key: const ValueKey('reference-editor'),
+      rect: rect.inflate(pad),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            left: pad,
+            top: pad,
+            right: pad,
+            bottom: pad,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.move,
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  gestureSettings: const DeviceGestureSettings(touchSlop: 2),
+                ),
+                child: GestureDetector(
+                  supportedDevices: _editDevices,
+                  behavior: HitTestBehavior.opaque,
+                  dragStartBehavior: DragStartBehavior.down,
+                  onPanStart: (d) =>
+                      _beginReferenceDrag(null, d.globalPosition),
+                  onPanUpdate: (d) => _updateReferenceDrag(d.globalPosition),
+                  onPanEnd: (_) => _endDrag(),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: color, width: 1.5 / scale),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          for (final h in _handles)
+            _gripAt(
+              h,
+              rect.size,
+              pad: pad,
+              handle: handle,
+              scale: scale,
+              color: color,
+              onStart: (g) => _beginReferenceDrag(h, g),
+              onUpdate: _updateReferenceDrag,
+            ),
+        ],
       ),
     );
   }
