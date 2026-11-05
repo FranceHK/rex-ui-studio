@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../fonts/app_fonts.dart';
 import '../icons/app_icons.dart';
 import '../icons/icon_style.dart';
 import '../models/ui_element.dart';
@@ -16,10 +17,13 @@ class ElementView extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = element;
     final radius = BorderRadius.circular(e.radius);
-    final textStyle = TextStyle(
-      color: e.textColor,
-      fontSize: e.fontSize,
-      fontWeight: e.bold ? FontWeight.w600 : FontWeight.w400,
+    final textStyle = styleWithFont(
+      e.fontFamily,
+      TextStyle(
+        color: e.textColor,
+        fontSize: e.fontSize,
+        fontWeight: fontWeightOf(e.fontWeight),
+      ),
     );
 
     // Text alignment inside the box
