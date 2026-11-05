@@ -94,6 +94,8 @@ class EditorController extends ChangeNotifier {
   // ---------- Elements ----------
 
   void select(String? id) {
+    // Picking an element ends reference adjusting
+    if (id != null) adjustingReference = false;
     final ids = id == null ? <String>{} : _withGroups({id});
     if (selectedId == id && setEquals(selectedIds, ids)) return;
     selectedId = id;
@@ -446,11 +448,24 @@ class EditorController extends ChangeNotifier {
       updatePage(page.copyWith(grid: grid), record: record);
 
   /// Set or change the current screen's reference image (null removes it).
-  void setReference(ReferenceImage? reference, {bool record = true}) =>
-      updatePage(
-        page.copyWith(reference: reference, clearReference: reference == null),
-        record: record,
-      );
+  void setReference(ReferenceImage? reference, {bool record = true}) {
+    if (reference == null) adjustingReference = false;
+    updatePage(
+      page.copyWith(reference: reference, clearReference: reference == null),
+      record: record,
+    );
+  }
+
+  /// The reference image can be moved and resized on the canvas
+  /// (not saved: it's an editing mode).
+  bool adjustingReference = false;
+
+  void setAdjustingReference(bool on) {
+    if (adjustingReference == on) return;
+    adjustingReference = on;
+    if (on) select(null);
+    notifyListeners();
+  }
 
   void setRulerOrigin(Offset origin) =>
       updatePage(page.copyWith(rulerOrigin: origin));
