@@ -137,8 +137,8 @@ class EditorController extends ChangeNotifier {
   }
 
   void selectAll() {
-    selectedIds = {for (final e in page.elements) e.id};
-    selectedId = page.elements.lastOrNull?.id;
+    selectedIds = {for (final e in page.visibleElements) e.id};
+    selectedId = page.visibleElements.lastOrNull?.id;
     notifyListeners();
   }
 
