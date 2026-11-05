@@ -577,15 +577,82 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Moves the selection above every other layer.
   void bringToFront() => _reorder(toFront: true);
+
+  /// Moves the selection beneath every other layer.
   void sendToBack() => _reorder(toFront: false);
 
   void _reorder({required bool toFront}) {
-    final el = selected;
-    if (el == null) return;
+    if (selectedIds.isEmpty) return;
     checkpoint();
-    final rest = page.elements.where((e) => e.id != el.id);
-    _setPage(page.copyWith(elements: toFront ? [...rest, el] : [el, ...rest]));
+    final picked = [
+      for (final e in page.elements)
+        if (selectedIds.contains(e.id)) e,
+    ];
+    final rest = [
+      for (final e in page.elements)
+        if (!selectedIds.contains(e.id)) e,
+    ];
+    _setPage(
+      page.copyWith(
+        elements: toFront ? [...rest, ...picked] : [...picked, ...rest],
+      ),
+    );
+  }
+
+  /// Whether the selection can go one layer up / down.
+  bool get canMoveForward => _canStep(forward: true);
+  bool get canMoveBackward => _canStep(forward: false);
+
+  bool _canStep({required bool forward}) {
+    final list = page.elements;
+    for (var i = 0; i < list.length; i++) {
+      if (!selectedIds.contains(list[i].id)) continue;
+      final j = forward ? i + 1 : i - 1;
+      if (j >= 0 && j < list.length && !selectedIds.contains(list[j].id)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Moves the selection one layer up (towards the front).
+  void moveForward() => _step(forward: true);
+
+  /// Moves the selection one layer down (towards the back).
+  void moveBackward() => _step(forward: false);
+
+  void _step({required bool forward}) {
+    if (!_canStep(forward: forward)) return;
+    checkpoint();
+    final list = [...page.elements];
+    // Walk from the side we move towards so a block of selected layers
+    // moves together, one step
+    final order = forward
+        ? [for (var i = list.length - 2; i >= 0; i--) i]
+        : [for (var i = 1; i < list.length; i++) i];
+    for (final i in order) {
+      final j = forward ? i + 1 : i - 1;
+      if (selectedIds.contains(list[i].id) &&
+          !selectedIds.contains(list[j].id)) {
+        final moved = list[i];
+        list[i] = list[j];
+        list[j] = moved;
+      }
+    }
+    _setPage(page.copyWith(elements: list));
+  }
+
+  /// Drag-to-reorder in the Layers list, which shows the top layer first.
+  /// [from] and [to] are list positions, [to] counted after [from] is
+  /// taken out.
+  void reorderLayer(int from, int to) {
+    final list = page.elements.reversed.toList();
+    if (from == to || from < 0 || from >= list.length) return;
+    checkpoint();
+    list.insert(to.clamp(0, list.length - 1), list.removeAt(from));
+    _setPage(page.copyWith(elements: list.reversed.toList()));
   }
 
   // ---------- Project (save / load) ----------
