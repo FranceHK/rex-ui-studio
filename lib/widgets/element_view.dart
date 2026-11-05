@@ -109,6 +109,10 @@ class ElementView extends StatelessWidget {
       ElementType.divider => Center(
         child: Container(height: 1, color: e.color),
       ),
+      ElementType.path => CustomPaint(
+        painter: PenShapePainter(e),
+        child: const SizedBox.expand(),
+      ),
     };
   }
 }
@@ -142,4 +146,34 @@ class _Toggle extends StatelessWidget {
       },
     );
   }
+}
+
+/// Paints a pen shape: filled when closed, a line when open.
+class PenShapePainter extends CustomPainter {
+  PenShapePainter(this.element);
+
+  final UiElement element;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final e = element;
+    final paint = Paint()
+      ..color = e.color
+      ..isAntiAlias = true;
+    if (!e.closed) {
+      paint
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = e.strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+    }
+    canvas.drawPath(e.pathIn(size), paint);
+  }
+
+  @override
+  bool shouldRepaint(PenShapePainter old) =>
+      old.element.points != element.points ||
+      old.element.closed != element.closed ||
+      old.element.color != element.color ||
+      old.element.strokeWidth != element.strokeWidth;
 }
