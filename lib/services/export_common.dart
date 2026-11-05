@@ -146,3 +146,15 @@ const _composeIcons = [
   ('calendar', 'DateRange'),
   ('star', 'Star'),
 ];
+
+/// Font families used by the visible text elements, sorted.
+List<String> usedFonts(DesignPage page) => {
+  for (final e in page.visibleElements)
+    if (e.type.hasText && e.fontFamily != null) e.fontFamily!,
+}.toList()..sort();
+
+/// Google Fonts stylesheet that loads [fonts] with every weight.
+String googleFontsUrl(List<String> fonts) =>
+    'https://fonts.googleapis.com/css2?'
+    '${fonts.map((f) => 'family=${f.replaceAll(' ', '+')}:wght@100..900').join('&')}'
+    '&display=swap';
