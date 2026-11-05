@@ -130,7 +130,7 @@ class EditorController extends ChangeNotifier {
   /// Select every element touching [area] (artboard coordinates).
   void selectInRect(Rect area, {bool add = false}) {
     final hits = [
-      for (final e in page.elements)
+      for (final e in page.visibleElements)
         if (e.rect.overlaps(area)) e.id,
     ];
     selectedIds = {if (add) ...selectedIds, ...hits};
@@ -241,6 +241,15 @@ class EditorController extends ChangeNotifier {
   void toggleLock(String id) {
     final el = page.elements.firstWhere((e) => e.id == id);
     updateElement(el.copyWith(locked: !el.locked));
+  }
+
+  /// Hide or show an element. A hidden element is also deselected.
+  void toggleHidden(String id) {
+    final el = page.elements.firstWhere((e) => e.id == id);
+    updateElement(el.copyWith(hidden: !el.hidden));
+    if (!el.hidden && selectedIds.contains(id)) {
+      toggleSelect(id);
+    }
   }
 
   // ---------- Alignment and distribution ----------
