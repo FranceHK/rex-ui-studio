@@ -53,7 +53,8 @@ WebNode _node(UiElement e) {
   final font = {
     'color': hexColor(e.textColor),
     'font-size': '${fmt(e.fontSize)}px',
-    'font-weight': e.bold ? '600' : '400',
+    if (e.fontFamily case final f?) 'font-family': "'$f', sans-serif",
+    'font-weight': '${e.fontWeight}',
   };
   final align = switch (e.effectiveTextAlign) {
     TextAlign.center => 'center',
@@ -289,7 +290,13 @@ String exportHtml(DesignPage page) {
       '  <meta name="viewport" content="width=device-width, initial-scale=1">',
     )
     ..writeln('  <title>${_html(page.name)}</title>')
-    ..writeln('  <link rel="stylesheet" href="$_iconFont">')
+    ..writeln('  <link rel="stylesheet" href="$_iconFont">');
+  if (usedFonts(page) case final fonts when fonts.isNotEmpty) {
+    b.writeln(
+      '  <link rel="stylesheet" href="${_html(googleFontsUrl(fonts))}">',
+    );
+  }
+  b
     ..writeln('  <style>body { margin: 0; }</style>')
     ..writeln('</head>')
     ..writeln('<body>')
@@ -338,7 +345,13 @@ String exportReact(DesignPage page) {
     ..writeln(
       '// Icons use the Material Symbols Rounded font: <link rel="stylesheet" '
       'href="$_iconFont">',
-    )
+    );
+  if (usedFonts(page) case final fonts when fonts.isNotEmpty) {
+    b.writeln(
+      '// Fonts: <link rel="stylesheet" href="${googleFontsUrl(fonts)}">',
+    );
+  }
+  b
     ..writeln()
     ..writeln('export default function $name() {')
     ..writeln('  return (');
