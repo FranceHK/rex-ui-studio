@@ -146,7 +146,7 @@ class _ComponentsTab extends StatelessWidget {
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
           children: [
-            for (final t in ElementType.values)
+            for (final t in ElementType.values.where((t) => t.inPalette))
               Draggable<NewElement>(
                 data: NewElement(t),
                 dragAnchorStrategy: pointerDragAnchorStrategy,
