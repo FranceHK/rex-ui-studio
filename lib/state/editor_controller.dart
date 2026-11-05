@@ -263,6 +263,72 @@ class EditorController extends ChangeNotifier {
     );
   }
 
+  // ---------- Pen tool ----------
+
+  /// The pen tool is on: taps on the screen add points to [penDraft].
+  bool penTool = false;
+
+  /// Points placed so far (artboard coordinates); not saved.
+  List<Offset> penDraft = const [];
+
+  void setPenTool(bool on) {
+    if (penTool == on) return;
+    penTool = on;
+    penDraft = const [];
+    if (on) {
+      select(null);
+      adjustingReference = false;
+    }
+    notifyListeners();
+  }
+
+  void addPenPoint(Offset p) {
+    penDraft = [...penDraft, Offset(tidy(p.dx), tidy(p.dy))];
+    notifyListeners();
+  }
+
+  /// Remove the last placed point (Backspace).
+  void undoPenPoint() {
+    if (penDraft.isEmpty) return;
+    penDraft = penDraft.sublist(0, penDraft.length - 1);
+    notifyListeners();
+  }
+
+  /// Turn the draft into a pen shape and select it. A closed shape needs
+  /// 3+ points, an open line 2+. The tool stays on for the next shape.
+  void finishPen({required bool closed}) {
+    final pts = penDraft;
+    if (pts.length < (closed ? 3 : 2)) return;
+    checkpoint();
+    var bounds = boundsOf(
+      pts.map((p) => Rect.fromCenter(center: p, width: 0, height: 0)),
+    );
+    // A straight horizontal/vertical line still needs some size
+    bounds = Rect.fromLTWH(
+      bounds.left,
+      bounds.top,
+      max(bounds.width, 1),
+      max(bounds.height, 1),
+    );
+    final el = UiElement.create(ElementType.path, _newId(), bounds).copyWith(
+      closed: closed,
+      points: [
+        for (final p in pts)
+          // 4 decimals: precise to well under a pixel on any screen
+          Offset(
+            _frac((p.dx - bounds.left) / bounds.width),
+            _frac((p.dy - bounds.top) / bounds.height),
+          ),
+      ],
+    );
+    penDraft = const [];
+    selectedId = el.id;
+    selectedIds = {el.id};
+    _setPage(page.copyWith(elements: [...page.elements, el]));
+  }
+
+  double _frac(double v) => (v * 10000).roundToDouble() / 10000;
+
   // ---------- Groups ----------
 
   /// The selection can be grouped (2+ elements, not already one group).
