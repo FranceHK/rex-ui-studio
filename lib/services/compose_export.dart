@@ -41,7 +41,7 @@ String exportCompose(DesignPage page) {
       '    Box(Modifier.size(${fmt(size.width)}.dp, ${fmt(size.height)}.dp)'
       '.background(${_color(page.background)})) {',
     );
-  for (final e in page.elements) {
+  for (final e in page.visibleElements) {
     final r = e.rect;
     final m =
         'Modifier.offset(${fmt(r.left)}.dp, ${fmt(r.top)}.dp)'

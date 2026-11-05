@@ -9,7 +9,7 @@ import 'flutter_export.dart' show className;
 String exportSwiftUI(DesignPage page) {
   final name = className(page.name).replaceAll(RegExp(r'Screen$'), 'View');
   final size = page.size;
-  final usesPolygon = page.elements.any(
+  final usesPolygon = page.visibleElements.any(
     (e) => e.type.hasShape && shapePoints(e.shape) != null,
   );
 
@@ -23,7 +23,7 @@ String exportSwiftUI(DesignPage page) {
     ..writeln('struct $name: View {')
     ..writeln('    var body: some View {')
     ..writeln('        ZStack(alignment: .topLeading) {');
-  for (final e in page.elements) {
+  for (final e in page.visibleElements) {
     final r = e.rect;
     b
       ..writeln('            ${_view(e)}')

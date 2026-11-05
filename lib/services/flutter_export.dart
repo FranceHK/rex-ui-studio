@@ -13,7 +13,7 @@ String exportFlutter(DesignPage page) {
 
   // Import only the amazing_icons styles in use
   final styles = <IconStyle>{
-    for (final e in page.elements)
+    for (final e in page.visibleElements)
       if (e.type == ElementType.iconItem)
         e.iconStyle
       else if (e.type == ElementType.appBar || e.type == ElementType.navBar)
@@ -43,7 +43,7 @@ String exportFlutter(DesignPage page) {
     ..writeln('        child: Stack(')
     ..writeln('          children: [');
 
-  for (final e in page.elements) {
+  for (final e in page.visibleElements) {
     final r = e.rect;
     b
       ..writeln('            Positioned(')

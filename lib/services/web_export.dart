@@ -37,7 +37,7 @@ WebNode webTree(DesignPage page) => WebNode(
     'background': hexColor(page.background),
     'font-family': 'system-ui, -apple-system, Roboto, sans-serif',
   },
-  children: [for (final e in page.elements) _node(e)],
+  children: [for (final e in page.visibleElements) _node(e)],
 );
 
 WebNode _node(UiElement e) {

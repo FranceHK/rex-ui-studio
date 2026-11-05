@@ -28,7 +28,7 @@ class ArtboardPicture extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.hardEdge,
           children: [
-            for (final e in page.elements)
+            for (final e in page.visibleElements)
               Positioned.fromRect(
                 rect: e.rect,
                 child: ElementView(element: e),
