@@ -80,9 +80,21 @@ String exportSwiftUI(DesignPage page) {
 
 String _view(UiElement e) {
   final text = _s(e.text);
-  final font =
-      '.font(.system(size: ${fmt(e.fontSize)}, '
-      'weight: .${e.bold ? 'semibold' : 'regular'}))';
+  final weight = switch (e.fontWeight) {
+    <= 100 => 'ultraLight',
+    <= 200 => 'thin',
+    <= 300 => 'light',
+    <= 400 => 'regular',
+    <= 500 => 'medium',
+    <= 600 => 'semibold',
+    <= 700 => 'bold',
+    <= 800 => 'heavy',
+    _ => 'black',
+  };
+  final font = e.fontFamily == null
+      ? '.font(.system(size: ${fmt(e.fontSize)}, weight: .$weight))'
+      : '.font(.custom("${_s(e.fontFamily!)}", size: ${fmt(e.fontSize)})'
+            '.weight(.$weight))';
   final fg = '.foregroundStyle(${_color(e.textColor)})';
   final align = switch (e.effectiveTextAlign) {
     TextAlign.center => 'center',
