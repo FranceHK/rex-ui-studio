@@ -157,7 +157,9 @@ class _DesignCanvasState extends State<DesignCanvas> {
             event.kind == PointerDeviceKind.invertedStylus)) {
       final p = view.toWorld(event.localPosition) - _origin;
       final reach = penReachPx / view.scale;
-      near = c.page.elements.reversed
+      near = c.page.visibleElements
+          .toList()
+          .reversed
           .where((e) => !e.locked && e.rect.inflate(reach).contains(p))
           .firstOrNull
           ?.id;
@@ -177,7 +179,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
     return SnapTargets(
       artboard: p.size,
       others: [
-        for (final e in p.elements)
+        for (final e in p.visibleElements)
           if (!exclude.contains(e.id)) e.rect,
       ],
       guideX: [
@@ -596,7 +598,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
           measures = hovered != null
               ? measureBetween(selBounds, hovered.rect)
               : measureDistances(selBounds, [
-                  for (final e in page.elements)
+                  for (final e in page.visibleElements)
                     if (!c.selectedIds.contains(e.id)) e.rect,
                 ], page.size);
         }
@@ -865,7 +867,7 @@ class _DesignCanvasState extends State<DesignCanvas> {
                       ),
                     ),
                   ),
-                  for (final e in p.elements)
+                  for (final e in p.visibleElements)
                     _element(
                       i,
                       e,
