@@ -21,6 +21,9 @@ String exportFlutter(DesignPage page) {
   }.toList()..sort((a, b) => a.name.compareTo(b.name));
 
   final b = StringBuffer()..writeln("import 'package:flutter/material.dart';");
+  if (page.visibleElements.any((e) => e.type.hasText && e.fontFamily != null)) {
+    b.writeln("import 'package:google_fonts/google_fonts.dart';");
+  }
   for (final s in styles) {
     b.writeln("import '${s.importPath}';");
   }
@@ -124,10 +127,13 @@ String className(String name) {
 
 String _widget(UiElement e) {
   final radius = 'BorderRadius.circular(${_n(e.radius)})';
-  final style =
+  final textStyle =
       'TextStyle(color: ${_c(e.textColor)}, '
       'fontSize: ${_n(e.fontSize)}, '
-      'fontWeight: FontWeight.${e.bold ? 'w600' : 'w400'})';
+      'fontWeight: FontWeight.w${e.fontWeight})';
+  final style = e.fontFamily == null
+      ? textStyle
+      : "GoogleFonts.getFont('${_s(e.fontFamily!)}', textStyle: $textStyle)";
   final text = _s(e.text);
 
   return switch (e.type) {
