@@ -90,6 +90,10 @@ Rect boundsOf(Iterable<Rect> rects) =>
 /// Round to 2 decimal places (avoids 15.000000001).
 double tidy(double v) => (v * 100).roundToDouble() / 100;
 
+/// [tidy] on every side of a rectangle.
+Rect tidyRect(Rect r) =>
+    Rect.fromLTWH(tidy(r.left), tidy(r.top), tidy(r.width), tidy(r.height));
+
 /// Smallest width/height of an element being resized.
 const minElementSize = Size(8, 4);
 
