@@ -223,17 +223,29 @@ class PropertiesPanel extends StatelessWidget {
           ),
         ],
       ),
-      Wrap(
+      Row(
         children: [
-          TextButton.icon(
-            onPressed: c.bringToFront,
-            icon: const Icon(AppIcons.front, size: 18),
-            label: const Text('Bring forward'),
+          const Text('Layer'),
+          const Spacer(),
+          IconButton(
+            tooltip: 'Bring to front (Shift+Cmd+])',
+            icon: const Icon(AppIcons.toFront, size: 18),
+            onPressed: c.canMoveForward ? c.bringToFront : null,
           ),
-          TextButton.icon(
-            onPressed: c.sendToBack,
+          IconButton(
+            tooltip: 'Move up (Cmd+])',
+            icon: const Icon(AppIcons.front, size: 18),
+            onPressed: c.canMoveForward ? c.moveForward : null,
+          ),
+          IconButton(
+            tooltip: 'Move down (Cmd+[)',
             icon: const Icon(AppIcons.backward, size: 18),
-            label: const Text('Send backward'),
+            onPressed: c.canMoveBackward ? c.moveBackward : null,
+          ),
+          IconButton(
+            tooltip: 'Send to back (Shift+Cmd+[)',
+            icon: const Icon(AppIcons.toBack, size: 18),
+            onPressed: c.canMoveBackward ? c.sendToBack : null,
           ),
         ],
       ),
