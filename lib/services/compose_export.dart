@@ -67,7 +67,8 @@ String _composable(UiElement e, String m) {
   final text = _s(e.text);
   final style =
       'color = ${_color(e.textColor)}, fontSize = ${fmt(e.fontSize)}.sp, '
-      'fontWeight = FontWeight.${e.bold ? 'SemiBold' : 'Normal'}';
+      'fontWeight = FontWeight.W${e.fontWeight}'
+      '${e.fontFamily == null ? '' : ' /* font: ${e.fontFamily} */'}';
   final align = switch (e.effectiveTextAlign) {
     TextAlign.center => 'Center',
     TextAlign.right || TextAlign.end => 'End',
