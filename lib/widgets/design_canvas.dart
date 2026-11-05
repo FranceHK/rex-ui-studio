@@ -44,11 +44,16 @@ class _MoveDrag extends _Drag {
 }
 
 class _ResizeDrag extends _Drag {
-  _ResizeDrag(this.id, this.start, this.pointer, this.targets, this.handle);
-  final String id;
+  _ResizeDrag(this.starts, this.start, this.pointer, this.targets, this.handle);
+
+  /// Rectangles of the elements being resized; more than one when a
+  /// multi-selection or group is scaled together.
+  final Map<String, Rect> starts;
 
   /// The handle being dragged: a corner or the middle of an edge.
   final Alignment handle;
+
+  /// Bounds of [starts] when the drag began.
   final Rect start;
   final Offset pointer;
   final SnapTargets targets;
@@ -280,7 +285,29 @@ class _DesignCanvasState extends State<DesignCanvas> {
   void _beginResize(UiElement e, Alignment handle, Offset global) {
     // A hover handle can belong to an element that isn't selected yet
     if (!c.selectedIds.contains(e.id)) c.select(e.id);
-    _drag = _ResizeDrag(e.id, e.rect, _local(global), _targets({e.id}), handle);
+    _drag = _ResizeDrag(
+      {e.id: e.rect},
+      e.rect,
+      _local(global),
+      _targets({e.id}),
+      handle,
+    );
+  }
+
+  /// Resize the whole selection (or group) by its bounding box.
+  void _beginSelectionResize(Alignment handle, Offset global) {
+    final starts = {
+      for (final e in c.selectedElements)
+        if (!e.locked && !e.hidden) e.id: e.rect,
+    };
+    if (starts.isEmpty) return;
+    _drag = _ResizeDrag(
+      starts,
+      boundsOf(starts.values),
+      _local(global),
+      _targets(starts.keys.toSet()),
+      handle,
+    );
   }
 
   void _updateResize(Offset global) {
@@ -305,7 +332,12 @@ class _DesignCanvasState extends State<DesignCanvas> {
             handle: d.handle,
           )
         : SnapResult(raw, const []);
-    c.setRects({d.id: snapped.rect}, record: false);
+    c.setRects(
+      d.starts.length == 1
+          ? {d.starts.keys.single: snapped.rect}
+          : c.scaledSelection(d.starts, d.start, snapped.rect),
+      record: false,
+    );
     setState(() => _lines = v.smartGuides ? snapped.lines : const []);
   }
 
@@ -882,6 +914,14 @@ class _DesignCanvasState extends State<DesignCanvas> {
                   _referenceLayer(p, onTop: true),
                   if (p.safeArea case final insets? when p.showSafeArea)
                     Positioned.fill(child: SafeAreaGuides(insets: insets)),
+                  if (active && c.selectedIds.length > 1)
+                    if (c.selectedElements.where((e) => !e.locked && !e.hidden)
+                        case final movable when movable.isNotEmpty)
+                      _selectionBox(
+                        boundsOf(movable.map((e) => e.rect)),
+                        scale,
+                        group: c.selectionIsGroup,
+                      ),
                 ],
               ),
             ),
@@ -1107,30 +1147,95 @@ class _DesignCanvasState extends State<DesignCanvas> {
           ),
           if (resizable)
             for (final h in _handles)
-              Positioned(
-                left: pad + (h.x + 1) / 2 * e.rect.width - handle / 2,
-                top: pad + (h.y + 1) / 2 * e.rect.height - handle / 2,
-                width: handle,
-                height: handle,
-                // Grips react after a few px (the default pen slop is 36 px)
-                // and measure from where the pen touched down.
-                child: MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    gestureSettings: const DeviceGestureSettings(touchSlop: 2),
-                  ),
-                  child: GestureDetector(
-                    supportedDevices: _editDevices,
-                    dragStartBehavior: DragStartBehavior.down,
-                    onPanStart: (d) => _beginResize(e, h, d.globalPosition),
-                    onPanUpdate: (d) => _updateResize(d.globalPosition),
-                    onPanEnd: (_) => _endDrag(),
-                    child: MouseRegion(
-                      cursor: _resizeCursor(h),
-                      child: _Grip(handle: h, color: primary, scale: scale),
-                    ),
+              _gripAt(
+                h,
+                e.rect.size,
+                pad: pad,
+                handle: handle,
+                scale: scale,
+                color: primary,
+                onStart: (g) => _beginResize(e, h, g),
+              ),
+        ],
+      ),
+    );
+  }
+
+  /// A resize grip at [h] on a box of [size] that sits [pad] inside its
+  /// parent.
+  Widget _gripAt(
+    Alignment h,
+    Size size, {
+    required double pad,
+    required double handle,
+    required double scale,
+    required Color color,
+    required void Function(Offset global) onStart,
+  }) {
+    return Positioned(
+      left: pad + (h.x + 1) / 2 * size.width - handle / 2,
+      top: pad + (h.y + 1) / 2 * size.height - handle / 2,
+      width: handle,
+      height: handle,
+      // Grips react after a few px (the default pen slop is 36 px)
+      // and measure from where the pen touched down.
+      child: MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(gestureSettings: const DeviceGestureSettings(touchSlop: 2)),
+        child: GestureDetector(
+          supportedDevices: _editDevices,
+          dragStartBehavior: DragStartBehavior.down,
+          onPanStart: (d) => onStart(d.globalPosition),
+          onPanUpdate: (d) => _updateResize(d.globalPosition),
+          onPanEnd: (_) => _endDrag(),
+          child: MouseRegion(
+            cursor: _resizeCursor(h),
+            child: _Grip(handle: h, color: color, scale: scale),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The box around a multi-selection or group, with grips that scale
+  /// everything inside it together.
+  Widget _selectionBox(Rect bounds, double scale, {required bool group}) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final handle = (v.penMode ? 20 : 12) / scale;
+    final pad = handle;
+    return Positioned.fromRect(
+      key: const ValueKey('selection-box'),
+      rect: bounds.inflate(pad),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            left: pad,
+            top: pad,
+            right: pad,
+            bottom: pad,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: primary.withValues(alpha: group ? 1 : 0.7),
+                    width: (group ? 1.5 : 1) / scale,
                   ),
                 ),
               ),
+            ),
+          ),
+          for (final h in _handles)
+            _gripAt(
+              h,
+              bounds.size,
+              pad: pad,
+              handle: handle,
+              scale: scale,
+              color: primary,
+              onStart: (g) => _beginSelectionResize(h, g),
+            ),
         ],
       ),
     );
