@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 
 import '../canvas/alignment.dart';
@@ -93,22 +94,36 @@ class EditorController extends ChangeNotifier {
   // ---------- Elements ----------
 
   void select(String? id) {
-    if (selectedId == id && selectedIds.length == (id == null ? 0 : 1)) {
-      return;
-    }
+    final ids = id == null ? <String>{} : _withGroups({id});
+    if (selectedId == id && setEquals(selectedIds, ids)) return;
     selectedId = id;
-    selectedIds = {?id};
+    selectedIds = ids;
     notifyListeners();
+  }
+
+  /// [ids] plus every element grouped with one of them.
+  Set<String> _withGroups(Iterable<String> ids) {
+    final groups = {
+      for (final e in page.elements)
+        if (ids.contains(e.id) && e.groupId != null) e.groupId,
+    };
+    return {
+      ...ids,
+      for (final e in page.elements)
+        if (groups.contains(e.groupId)) e.id,
+    };
   }
 
   /// Shift + tap: add to or remove from the selection. The last element
   /// added becomes the key object.
   void toggleSelect(String id) {
+    // A grouped element brings its whole group along
+    final group = _withGroups({id});
     if (selectedIds.contains(id)) {
-      selectedIds = {...selectedIds}..remove(id);
-      if (selectedId == id) selectedId = selectedIds.lastOrNull;
+      selectedIds = {...selectedIds}..removeAll(group);
+      if (group.contains(selectedId)) selectedId = selectedIds.lastOrNull;
     } else {
-      selectedIds = {...selectedIds, id};
+      selectedIds = {...selectedIds, ...group};
       selectedId = id;
     }
     notifyListeners();
@@ -133,7 +148,7 @@ class EditorController extends ChangeNotifier {
       for (final e in page.visibleElements)
         if (e.rect.overlaps(area)) e.id,
     ];
-    selectedIds = {if (add) ...selectedIds, ...hits};
+    selectedIds = {if (add) ...selectedIds, ..._withGroups(hits)};
     selectedId = hits.lastOrNull ?? (add ? selectedId : null);
     notifyListeners();
   }
@@ -205,9 +220,17 @@ class EditorController extends ChangeNotifier {
     final els = selectedElements;
     if (els.isEmpty) return;
     checkpoint();
+    // Copies of a group form a new group
+    final groups = <String, String>{};
     final copies = [
       for (final el in els)
-        el.copyWith(id: _newId(), rect: el.rect.shift(const Offset(16, 16))),
+        el.copyWith(
+          id: _newId(),
+          rect: el.rect.shift(const Offset(16, 16)),
+          groupId: el.groupId == null
+              ? null
+              : groups.putIfAbsent(el.groupId!, () => 'k${_seq++}'),
+        ),
     ];
     selectedIds = {for (final e in copies) e.id};
     selectedId = copies.last.id;
@@ -236,6 +259,72 @@ class EditorController extends ChangeNotifier {
         ],
       ),
     );
+  }
+
+  // ---------- Groups ----------
+
+  /// The selection can be grouped (2+ elements, not already one group).
+  bool get canGroup => selectedIds.length >= 2 && !selectionIsGroup;
+
+  /// The selection is exactly one whole group.
+  bool get selectionIsGroup {
+    final groups = {for (final e in selectedElements) e.groupId};
+    return groups.length == 1 &&
+        groups.single != null &&
+        setEquals(_withGroups(selectedIds), selectedIds);
+  }
+
+  /// Any selected element belongs to a group.
+  bool get selectionHasGroup => selectedElements.any((e) => e.groupId != null);
+
+  /// Group the selected elements (Cmd/Ctrl + G). Groups inside the
+  /// selection are merged into the new one.
+  void groupSelected() {
+    if (selectedIds.length < 2) return;
+    checkpoint();
+    final id = 'k${_seq++}';
+    _setPage(
+      page.copyWith(
+        elements: [
+          for (final e in page.elements)
+            selectedIds.contains(e.id) ? e.copyWith(groupId: id) : e,
+        ],
+      ),
+    );
+  }
+
+  /// Ungroup the selected elements (Shift + Cmd/Ctrl + G); they stay selected.
+  void ungroupSelected() {
+    if (!selectionHasGroup) return;
+    checkpoint();
+    _setPage(
+      page.copyWith(
+        elements: [
+          for (final e in page.elements)
+            selectedIds.contains(e.id) ? e.copyWith(clearGroup: true) : e,
+        ],
+      ),
+    );
+  }
+
+  /// Scale the selected (unlocked) elements from [from] to [to], keeping
+  /// their positions and sizes relative to the selection bounds.
+  Map<String, Rect> scaledSelection(
+    Map<String, Rect> start,
+    Rect from,
+    Rect to,
+  ) {
+    final sx = from.width == 0 ? 1.0 : to.width / from.width;
+    final sy = from.height == 0 ? 1.0 : to.height / from.height;
+    return {
+      for (final MapEntry(key: id, value: r) in start.entries)
+        id: Rect.fromLTWH(
+          tidy(to.left + (r.left - from.left) * sx),
+          tidy(to.top + (r.top - from.top) * sy),
+          tidy(r.width * sx),
+          tidy(r.height * sy),
+        ),
+    };
   }
 
   void toggleLock(String id) {
@@ -465,7 +554,7 @@ class EditorController extends ChangeNotifier {
     final ids = [
       for (final p in loaded) ...[
         p.id,
-        for (final e in p.elements) e.id,
+        for (final e in p.elements) ...[e.id, ?e.groupId],
         for (final g in p.guides) g.id,
       ],
     ];
