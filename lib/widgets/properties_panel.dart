@@ -52,7 +52,13 @@ class PropertiesPanel extends StatelessWidget {
     return [
       Row(
         children: [
-          Expanded(child: _Heading('${els.length} elements')),
+          Expanded(
+            child: _Heading(
+              c.selectionIsGroup
+                  ? 'Group · ${els.length} elements'
+                  : '${els.length} elements',
+            ),
+          ),
           IconButton(
             tooltip: allLocked ? 'Unlock all' : 'Lock all',
             icon: Icon(allLocked ? AppIcons.lock : AppIcons.unlock, size: 18),
@@ -75,6 +81,24 @@ class PropertiesPanel extends StatelessWidget {
           ),
         ],
       ),
+      Wrap(
+        spacing: 8,
+        children: [
+          if (c.canGroup)
+            FilledButton.tonalIcon(
+              icon: const Icon(AppIcons.group, size: 18),
+              label: const Text('Group (Cmd+G)'),
+              onPressed: c.groupSelected,
+            ),
+          if (c.selectionHasGroup)
+            OutlinedButton.icon(
+              icon: const Icon(AppIcons.ungroup, size: 18),
+              label: const Text('Ungroup'),
+              onPressed: c.ungroupSelected,
+            ),
+        ],
+      ),
+      const SizedBox(height: 8),
       Text(
         'Shift + tap to add/remove · Alt to see distances',
         style: TextStyle(
