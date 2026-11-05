@@ -11,6 +11,7 @@ String exportCompose(DesignPage page) {
   final size = page.size;
 
   final b = StringBuffer()
+    ..writeln('import androidx.compose.foundation.Canvas')
     ..writeln('import androidx.compose.foundation.background')
     ..writeln('import androidx.compose.foundation.border')
     ..writeln('import androidx.compose.foundation.layout.*')
@@ -25,6 +26,10 @@ String exportCompose(DesignPage page) {
     ..writeln('import androidx.compose.ui.Modifier')
     ..writeln('import androidx.compose.ui.geometry.Rect')
     ..writeln('import androidx.compose.ui.graphics.Color')
+    ..writeln('import androidx.compose.ui.graphics.Path')
+    ..writeln('import androidx.compose.ui.graphics.StrokeCap')
+    ..writeln('import androidx.compose.ui.graphics.StrokeJoin')
+    ..writeln('import androidx.compose.ui.graphics.drawscope.Stroke')
     ..writeln('import androidx.compose.ui.text.font.FontWeight')
     ..writeln('import androidx.compose.ui.text.style.TextAlign')
     ..writeln('import androidx.compose.ui.tooling.preview.Preview')
@@ -115,7 +120,24 @@ String _composable(UiElement e, String m) {
     ElementType.divider =>
       'Box($m, contentAlignment = Alignment.Center) '
           '{ HorizontalDivider(color = ${_color(e.color)}) }',
+    ElementType.path => _penShape(e, m),
   };
+}
+
+/// A pen shape drawn on a Canvas: filled when closed, a line when open.
+String _penShape(UiElement e, String m) {
+  final path = [
+    for (final (i, p) in e.points.indexed)
+      '${i == 0 ? 'moveTo' : 'lineTo'}(size.width * ${fmt3(p.dx)}f, '
+          'size.height * ${fmt3(p.dy)}f)',
+    if (e.closed) 'close()',
+  ].join('; ');
+  final style = e.closed
+      ? ''
+      : ', style = Stroke(width = ${fmt(e.strokeWidth)}.dp.toPx(), '
+            'cap = StrokeCap.Round, join = StrokeJoin.Round)';
+  return 'Canvas($m) { drawPath(Path().apply { $path }, '
+      '${_color(e.color)}$style) }';
 }
 
 String _shape(UiElement e) {
