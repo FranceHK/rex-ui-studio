@@ -124,6 +124,34 @@ class _EditorScreenState extends State<EditorScreen> {
         c.setPenTool(!c.penTool),
     const SingleActivator(LogicalKeyboardKey.enter): () =>
         c.finishPen(closed: false),
+    const SingleActivator(LogicalKeyboardKey.bracketRight, meta: true):
+        c.moveForward,
+    const SingleActivator(LogicalKeyboardKey.bracketRight, control: true):
+        c.moveForward,
+    const SingleActivator(LogicalKeyboardKey.bracketLeft, meta: true):
+        c.moveBackward,
+    const SingleActivator(LogicalKeyboardKey.bracketLeft, control: true):
+        c.moveBackward,
+    const SingleActivator(
+      LogicalKeyboardKey.bracketRight,
+      meta: true,
+      shift: true,
+    ): c.bringToFront,
+    const SingleActivator(
+      LogicalKeyboardKey.bracketRight,
+      control: true,
+      shift: true,
+    ): c.bringToFront,
+    const SingleActivator(
+      LogicalKeyboardKey.bracketLeft,
+      meta: true,
+      shift: true,
+    ): c.sendToBack,
+    const SingleActivator(
+      LogicalKeyboardKey.bracketLeft,
+      control: true,
+      shift: true,
+    ): c.sendToBack,
     const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): c.undo,
     const SingleActivator(LogicalKeyboardKey.keyZ, control: true): c.undo,
     const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
