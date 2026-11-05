@@ -21,7 +21,10 @@ enum ElementType {
   iconItem('Icon', AppIcons.star, Size(40, 40)),
   avatar('Avatar', AppIcons.avatar, Size(56, 56)),
   toggle('Switch', AppIcons.toggle, Size(52, 32)),
-  divider('Divider', AppIcons.divider, Size(280, 12));
+  divider('Divider', AppIcons.divider, Size(280, 12)),
+
+  /// A shape drawn point by point with the pen tool.
+  path('Pen shape', AppIcons.bezier, Size(120, 120));
 
   const ElementType(this.label, this.icon, this.defaultSize);
 
@@ -44,6 +47,9 @@ enum ElementType {
 
   /// Elements that can take a different shape (circle, star, …).
   bool get hasShape => this == container || this == image;
+
+  /// Offered in the Components panel (pen shapes come from the pen tool).
+  bool get inPalette => this != path;
 }
 
 /// Shape of a box or image. The corner radius ([UiElement.radius]) rounds
@@ -145,6 +151,9 @@ class UiElement {
     this.vAlign = VAlign.middle,
     this.link,
     this.shape = ElementShape.rectangle,
+    this.points = const [],
+    this.closed = true,
+    this.strokeWidth = 2,
   });
 
   /// A new element with the default style for its type.
@@ -238,6 +247,13 @@ class UiElement {
         rect: rect,
         color: const Color(0xFFE4E7EC),
       ),
+      ElementType.path => UiElement(
+        id: id,
+        type: type,
+        rect: rect,
+        color: brandColor,
+        points: const [Offset(0.5, 0), Offset(1, 1), Offset(0, 1)],
+      ),
     };
   }
 
@@ -276,6 +292,26 @@ class UiElement {
 
   ShapeBorder get shapeBorder => shape.border(radius, rect.size);
 
+  /// Pen shape points as fractions (0–1) of [rect], in drawing order.
+  final List<Offset> points;
+
+  /// A closed pen shape is filled; an open one is drawn as a line.
+  final bool closed;
+
+  /// Line width of an open pen shape.
+  final double strokeWidth;
+
+  /// The pen shape as a [Path] inside a box of [size].
+  Path pathIn(Size size) {
+    final path = Path();
+    for (final (i, p) in points.indexed) {
+      final x = p.dx * size.width, y = p.dy * size.height;
+      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+    }
+    if (closed) path.close();
+    return path;
+  }
+
   TextAlign get effectiveTextAlign =>
       textAlign ??
       switch (type) {
@@ -302,6 +338,9 @@ class UiElement {
     String? link,
     bool clearLink = false,
     ElementShape? shape,
+    List<Offset>? points,
+    bool? closed,
+    double? strokeWidth,
   }) {
     return UiElement(
       id: id ?? this.id,
@@ -321,6 +360,9 @@ class UiElement {
       vAlign: vAlign ?? this.vAlign,
       link: clearLink ? null : link ?? this.link,
       shape: shape ?? this.shape,
+      points: points ?? this.points,
+      closed: closed ?? this.closed,
+      strokeWidth: strokeWidth ?? this.strokeWidth,
     );
   }
 
@@ -342,6 +384,13 @@ class UiElement {
     if (vAlign != VAlign.middle) 'vAlign': vAlign.name,
     'link': ?link,
     if (shape != ElementShape.rectangle) 'shape': shape.name,
+    if (type == ElementType.path) ...{
+      'points': [
+        for (final p in points) [p.dx, p.dy],
+      ],
+      'closed': closed,
+      'stroke': strokeWidth,
+    },
   };
 
   factory UiElement.fromJson(Map<String, dynamic> json) {
@@ -372,6 +421,12 @@ class UiElement {
       shape:
           ElementShape.values.asNameMap()[json['shape']] ??
           ElementShape.rectangle,
+      points: [
+        for (final p in json['points'] as List? ?? const [])
+          Offset(((p as List)[0] as num).toDouble(), (p[1] as num).toDouble()),
+      ],
+      closed: json['closed'] as bool? ?? true,
+      strokeWidth: (json['stroke'] as num?)?.toDouble() ?? 2,
     );
   }
 }
