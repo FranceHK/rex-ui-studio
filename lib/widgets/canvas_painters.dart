@@ -282,3 +282,66 @@ void _pill(Canvas canvas, Offset center, String text, Color color) {
   );
   tp.paint(canvas, rect.topLeft + const Offset(4, 2));
 }
+
+/// The pen tool's draft: placed points, the lines between them and a
+/// rubber band to the cursor (artboard coordinates).
+class PenDraftPainter extends CustomPainter {
+  PenDraftPainter(
+    this.points, {
+    required this.cursor,
+    required this.scale,
+    required this.color,
+    required this.closing,
+  });
+
+  final List<Offset> points;
+  final Offset? cursor;
+
+  /// Screen pixels per artboard unit (keeps lines and dots a fixed size).
+  final double scale;
+  final Color color;
+
+  /// The cursor is on the first point: the next tap closes the shape.
+  final bool closing;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.isEmpty) return;
+    final line = Paint()
+      ..color = color
+      ..strokeWidth = 1.5 / scale
+      ..style = PaintingStyle.stroke;
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final p in points.skip(1)) {
+      path.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(path, line);
+    if (cursor case final c?) {
+      canvas.drawLine(
+        points.last,
+        closing ? points.first : c,
+        line..color = color.withValues(alpha: 0.5),
+      );
+    }
+    final fill = Paint()..color = Colors.white;
+    final ring = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5 / scale;
+    for (final (i, p) in points.indexed) {
+      // The first point grows when the next tap would close the shape
+      final r = (i == 0 && closing ? 7 : 4) / scale;
+      canvas
+        ..drawCircle(p, r, fill)
+        ..drawCircle(p, r, ring);
+    }
+  }
+
+  @override
+  bool shouldRepaint(PenDraftPainter old) =>
+      old.points != points ||
+      old.cursor != cursor ||
+      old.scale != scale ||
+      old.closing != closing ||
+      old.color != color;
+}
