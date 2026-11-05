@@ -6,6 +6,7 @@ import '../models/ui_element.dart';
 import '../state/editor_controller.dart';
 import 'icon_browser.dart';
 import 'layout_panels.dart';
+import 'font_picker.dart';
 import 'reference_section.dart';
 import 'shape_picker.dart';
 
@@ -383,11 +384,26 @@ class PropertiesPanel extends StatelessWidget {
           onChanged: (v) =>
               update(e.copyWith(fontSize: v.roundToDouble()), record: false),
         ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Bold'),
-          value: e.bold,
-          onChanged: (v) => update(e.copyWith(bold: v)),
+        const SizedBox(height: 8),
+        const _Label('Font'),
+        const SizedBox(height: 6),
+        FontFamilyField(
+          value: e.fontFamily,
+          weight: e.fontWeight,
+          onChanged: (f) => update(
+            f == null
+                ? e.copyWith(clearFontFamily: true)
+                : e.copyWith(fontFamily: f),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const _Label('Weight'),
+        const SizedBox(height: 6),
+        FontWeightField(
+          key: ValueKey('weight-${e.id}-${e.fontWeight}'),
+          family: e.fontFamily,
+          value: e.fontWeight,
+          onChanged: (w) => update(e.copyWith(fontWeight: w)),
         ),
       ],
       if (e.type.hasShape) ...[
