@@ -139,6 +139,7 @@ class UiElement {
     this.bold = false,
     this.locked = false,
     this.hidden = false,
+    this.groupId,
     this.iconStyle = IconStyle.broken,
     this.textAlign,
     this.vAlign = VAlign.middle,
@@ -257,6 +258,9 @@ class UiElement {
 
   /// A hidden element isn't drawn on the canvas, in "Run" or in exports.
   final bool hidden;
+
+  /// Elements sharing a group id are selected, moved and resized together.
+  final String? groupId;
   final IconStyle iconStyle;
 
   /// Text alignment INSIDE the box (not moving the element).
@@ -290,6 +294,8 @@ class UiElement {
     bool? bold,
     bool? locked,
     bool? hidden,
+    String? groupId,
+    bool clearGroup = false,
     IconStyle? iconStyle,
     TextAlign? textAlign,
     VAlign? vAlign,
@@ -309,6 +315,7 @@ class UiElement {
       bold: bold ?? this.bold,
       locked: locked ?? this.locked,
       hidden: hidden ?? this.hidden,
+      groupId: clearGroup ? null : groupId ?? this.groupId,
       iconStyle: iconStyle ?? this.iconStyle,
       textAlign: textAlign ?? this.textAlign,
       vAlign: vAlign ?? this.vAlign,
@@ -329,6 +336,7 @@ class UiElement {
     'bold': bold,
     'locked': locked,
     if (hidden) 'hidden': true,
+    'group': ?groupId,
     'iconStyle': iconStyle.name,
     'textAlign': ?textAlign?.name,
     if (vAlign != VAlign.middle) 'vAlign': vAlign.name,
@@ -355,6 +363,7 @@ class UiElement {
       bold: json['bold'] as bool? ?? false,
       locked: json['locked'] as bool? ?? false,
       hidden: json['hidden'] as bool? ?? false,
+      groupId: json['group'] as String?,
       iconStyle:
           IconStyle.values.asNameMap()[json['iconStyle']] ?? IconStyle.broken,
       textAlign: TextAlign.values.asNameMap()[json['textAlign']],
