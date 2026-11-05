@@ -119,8 +119,34 @@ class ReferenceSection extends StatelessWidget {
               ButtonSegment(value: f, label: Text(f.label)),
           ],
           selected: {r.fit},
-          onSelectionChanged: (s) => c.setReference(r.copyWith(fit: s.first)),
+          onSelectionChanged: (s) => c.setReference(
+            // Custom starts from where the picture is now
+            r.copyWith(fit: s.first, rect: r.rectIn(c.page.size)),
+          ),
         ),
+        const SizedBox(height: 8),
+        c.adjustingReference
+            ? FilledButton.icon(
+                icon: const Icon(AppIcons.check, size: 18),
+                label: const Text('Done adjusting'),
+                onPressed: () => c.setAdjustingReference(false),
+              )
+            : FilledButton.tonalIcon(
+                icon: const Icon(AppIcons.bezier, size: 18),
+                label: const Text('Move & resize on screen'),
+                onPressed: r.visible
+                    ? () => c.setAdjustingReference(true)
+                    : null,
+              ),
+        if (c.adjustingReference)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'Drag the picture to move it; drag a grip to resize. '
+              'Corners keep its proportions.',
+              style: TextStyle(fontSize: 12, color: scheme.outline),
+            ),
+          ),
         SwitchListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
