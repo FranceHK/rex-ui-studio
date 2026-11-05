@@ -10,6 +10,9 @@ import '../models/ui_element.dart';
 String fmt(double v) =>
     v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
 
+/// A 0–1 fraction with at most 3 decimals: 0.33333 → "0.333".
+String fmt3(double v) => ((v * 1000).round() / 1000).toString();
+
 /// Color channels as 0–1 values (r, g, b, a).
 (double, double, double, double) rgba(Color c) => (c.r, c.g, c.b, c.a);
 
